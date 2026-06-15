@@ -1,5 +1,5 @@
 # Usa a imagem oficial e leve do Node
-FROM node:18-alpine
+FROM node:18
 
 # Cria a pasta raiz do projeto dentro do contêiner
 WORKDIR /app

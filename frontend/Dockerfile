@@ -1,5 +1,5 @@
 # Usa a imagem oficial do Node
-FROM node:18-alpine
+FROM node:18
 
 # Define o diretório de trabalho
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instala as dependências do Front-end
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copia o código fonte da interface
 COPY . .

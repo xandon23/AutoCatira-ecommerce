@@ -1,0 +1,141 @@
+/* Container que ocupa toda a altura do ecrã com fundo Dark Profissional */
+.page-container {
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, #1e2024 0%, #0c0d0f 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Alinhamento centralizado respeitando a Navbar */
+.center-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  padding: 2rem;
+}
+
+/* Card de Login com efeito de profundidade */
+.login-card {
+  background-color: #161719;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 3rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.login-title {
+  font-weight: 800;
+  font-size: 2rem;
+  color: #ffffff;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+  color: #9ca3af;
+  font-size: 14px;
+  margin-bottom: 2rem;
+}
+
+/* Estrutura do Formulário */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-label {
+  font-size: 13px;
+  color: #d1d5db;
+  font-weight: 600;
+  margin-bottom: -8px; /* Aproxima o label do input */
+}
+
+.form-input {
+  background-color: #0f1012;
+  border: 1.5px solid #2a2c2f;
+  color: #f3f4f6;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 15px;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Feedback visual ao focar no campo */
+.form-input:focus {
+  border-color: #10b981; /* Verde esmeralda para foco */
+  background-color: #161719;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+/* Botão de Submissão - Estilo Premium */
+.submit-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 12px;
+  transition:
+    transform 0.2s,
+    filter 0.2s;
+}
+
+.submit-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  background: #374151;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Mensagem de Erro Amigável (Requisito da Rubrica) */
+.error-message {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Rodapé e Links */
+.login-footer {
+  text-align: center;
+  margin-top: 2rem;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.footer-link {
+  color: #10b981;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  margin-left: 5px;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: #34d399;
+  text-decoration: underline;
+}

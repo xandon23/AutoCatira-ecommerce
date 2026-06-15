@@ -1,0 +1,119 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  height: 64px;
+  background: #111;
+  border-bottom: 1px solid #222;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-brand {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.navbar-logo {
+  height: 165px;
+  width: 350px;
+  object-fit: contain;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 4px;
+}
+
+.navbar-link {
+  background: none;
+  border: none;
+  color: #aaa;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.navbar-user-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navbar-auth-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.navbar-user-btn {
+  color: #aaa;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px 14px;
+  border-radius: 8px;
+}
+
+.navbar-btn-outline {
+  background: none;
+  border: 1px solid #ff4545;
+  color: #ff4545;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.navbar-btn-solid {
+  background: #044040;
+  border: 1px solid #044040;
+  color: #f9fefe;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.navbar-btn-red {
+  background: rgba(255, 69, 69, 0.15);
+  border: 1px solid #ff4545;
+  color: #ff4545;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .navbar {
+    padding: 0 1rem;
+  }
+
+  .navbar-logo {
+    width: 180px;
+    height: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar {
+    gap: 10px;
+  }
+
+  .navbar-link,
+  .navbar-user-btn,
+  .navbar-btn-outline,
+  .navbar-btn-solid,
+  .navbar-btn-red {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .navbar-auth-actions,
+  .navbar-user-actions {
+    gap: 6px;
+  }
+}

@@ -1,0 +1,172 @@
+.proposal-page-container {
+  min-height: 100vh;
+  background-color: #0c0d0f;
+  padding: 40px 20px;
+}
+
+.proposal-loading {
+  color: #888;
+  text-align: center;
+  padding: 50px;
+}
+
+.proposal-card {
+  max-width: 700px;
+  margin: 0 auto;
+  background-color: #161719;
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid #2a2c2f;
+}
+
+.proposal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #2a2c2f;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.proposal-title {
+  color: #f0f0ee;
+  margin: 0;
+}
+
+.proposal-btn-back {
+  background: none;
+  border: 1px solid #2a2c2f;
+  color: #888;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.proposal-btn-back:hover {
+  background-color: #2a2c2f;
+  color: #f0f0ee;
+}
+
+.proposal-info {
+  color: #cccccc;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.proposal-price {
+  color: #e8ff3a;
+  font-weight: bold;
+}
+
+.proposal-message-box {
+  background-color: #1e2022;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 15px;
+}
+
+.proposal-message-label {
+  color: #888;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.proposal-message-text {
+  font-style: italic;
+  margin: 10px 0 0 0;
+  color: #f0f0ee;
+}
+
+.proposal-trade-box {
+  margin-top: 25px;
+  padding: 20px;
+  background-color: #1e2022;
+  border: 1px solid #2a2c2f;
+  border-radius: 8px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.proposal-trade-image {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.proposal-trade-title {
+  color: #f0f0ee;
+  margin: 0 0 5px 0;
+}
+
+.proposal-trade-text {
+  color: #888;
+  margin: 0 0 10px 0;
+}
+
+.proposal-trade-link {
+  color: #3affb0;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.proposal-trade-link:hover {
+  text-decoration: underline;
+}
+
+.proposal-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.proposal-btn-accept,
+.proposal-btn-reject {
+  flex: 1;
+  padding: 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: 0.2s;
+}
+
+.proposal-btn-accept {
+  background-color: rgba(58, 255, 176, 0.15);
+  color: #3affb0;
+  border: 1px solid #3affb0;
+}
+
+.proposal-btn-accept:hover {
+  background-color: rgba(58, 255, 176, 0.25);
+}
+
+.proposal-btn-reject {
+  background-color: rgba(255, 69, 69, 0.15);
+  color: #ff4545;
+  border: 1px solid #ff4545;
+}
+
+.proposal-btn-reject:hover {
+  background-color: rgba(255, 69, 69, 0.25);
+}
+
+@media (max-width: 600px) {
+  .proposal-trade-box {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .proposal-trade-image {
+    width: 100%;
+    height: auto;
+    max-height: 150px;
+  }
+
+  .proposal-actions {
+    flex-direction: column;
+  }
+}

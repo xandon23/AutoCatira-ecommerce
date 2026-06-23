@@ -1,3 +1,5 @@
+/// <reference types="cypress" />
+
 const gerarCpfValido = () => {
   const aleatorio = () => Math.floor(Math.random() * 9);
   const n = [
@@ -64,8 +66,7 @@ describe("Autenticação: Cadastro e Login", () => {
     cy.get('input[name="confirmPassword"]').type(usuarioTeste.password);
     cy.get('button[type="submit"]').click();
 
-    // Verifica se fomos redirecionados para o login ou painel com sucesso
-    cy.url().should("include", "/login"); // Ajuste conforme o fluxo do seu app
+    cy.url().should("include", "/login");
   });
 
   // ==========================================
@@ -78,8 +79,7 @@ describe("Autenticação: Cadastro e Login", () => {
     cy.get('input[type="password"]').type("senha_errada_123");
     cy.get('button[type="submit"]').click();
 
-    // Verifica se o sistema barrou e mostrou erro
-    cy.contains("inválid").should("be.visible"); // Ajuste para "credenciais inválidas" ou similar
+    cy.contains("inválid").should("be.visible");
   });
 
   it("Deve fazer login com sucesso e entrar no sistema", () => {
@@ -89,12 +89,10 @@ describe("Autenticação: Cadastro e Login", () => {
     cy.get('input[type="password"]').type(usuarioTeste.password);
     cy.get('button[type="submit"]').click();
 
-    // Verifica se o usuário logou e foi para a tela inicial/dashboard
     cy.url().should("not.include", "/profile");
 
     cy.get(".navbar-user-btn").click();
 
-    // Exemplo de verificação visual: a tela deve conter a palavra "Sair" ou "Logout"
     cy.contains("Sair").should("be.visible");
   });
 });

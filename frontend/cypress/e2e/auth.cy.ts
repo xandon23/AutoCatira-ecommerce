@@ -1,5 +1,5 @@
 /// <reference types="cypress" />
-
+export {};
 const gerarCpfValido = () => {
   const aleatorio = () => Math.floor(Math.random() * 9);
   const n = [

@@ -3,6 +3,7 @@ import api, {
   getUserById,
   getReviewsByUser,
   updateUser,
+  deleteUser,
   getProposalsByVehicle,
   getImageUrl,
 } from "../servicos/api";
@@ -17,6 +18,7 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { currentUser } = useContext(AuthContext);
+  const { handleLogout } = useContext(AuthContext);
 
   const targetId = id || currentUser?.id;
   const isSelf = currentUser && String(currentUser.id) === String(targetId);
@@ -184,6 +186,25 @@ export default function ProfilePage() {
     );
   }
 
+  const handleDeleteAccount = async () => {
+    if (!user || !user.id) return;
+
+    const confirmDelete = window.confirm(
+      "Tem certeza que deseja excluir sua conta? Esta ação é irreversível.",
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await deleteUser(user.id);
+
+      alert("Conta excluída com sucesso!");
+      handleLogout();
+    } catch (error) {
+      console.error("Erro ao excluir conta:", error);
+      alert("Erro ao excluir conta. Tente novamente.");
+    }
+  };
+
   return (
     <div className="profile-page">
       <div className="profile-layout">
@@ -215,6 +236,13 @@ export default function ProfilePage() {
                 title="O e-mail não pode ser alterado após o cadastro"
                 style={{ opacity: 0.6, cursor: "not-allowed" }}
               />
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                className="btn-delete-user"
+              >
+                Excluir Conta
+              </button>
               <button className="btn" onClick={handleSave}>
                 Salvar
               </button>

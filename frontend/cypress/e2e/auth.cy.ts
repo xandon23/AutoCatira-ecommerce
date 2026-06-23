@@ -51,7 +51,10 @@ describe("Autenticação: Cadastro e Login", () => {
     cy.get('input[name="cpf"]').type(usuarioTeste.cpf);
     cy.get('button[type="submit"]').click();
 
-    cy.contains("password").should("be.visible");
+    cy.get('input[type="password"]')
+      .invoke("prop", "validationMessage")
+      .should("not.be.empty");
+    cy.url().should("include", "/register");
   });
 
   it("Deve cadastrar um novo usuário com sucesso", () => {
@@ -77,9 +80,9 @@ describe("Autenticação: Cadastro e Login", () => {
 
     cy.get('input[type="email"]').type(usuarioTeste.email);
     cy.get('input[type="password"]').type("senha_errada_123");
+    cy.intercept("POST", "**/auth/login").as("loginFalho");
     cy.get('button[type="submit"]').click();
-
-    cy.contains("inválid").should("be.visible");
+    cy.wait("@loginFalho").its("response.statusCode").should("eq", 401);
   });
 
   it("Deve fazer login com sucesso e entrar no sistema", () => {

@@ -1,3 +1,14 @@
+.btn-delete-user {
+  background: #cf1332;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+  font-weight: 600;
+}
+
 .profile-page {
   min-height: 100vh;
   background: #0c0d0f;

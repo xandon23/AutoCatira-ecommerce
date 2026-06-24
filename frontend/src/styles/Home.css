@@ -281,6 +281,18 @@
   box-sizing: border-box;
 }
 
+.footer-brand {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.footer-logo {
+  height: 100px;
+  width: auto;
+  object-fit: contain;
+}
+
 @keyframes shimmer {
   0% {
     background-position: -600px 0;

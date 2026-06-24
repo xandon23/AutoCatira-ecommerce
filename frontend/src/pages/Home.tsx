@@ -28,7 +28,8 @@ function HeroBanner() {
         </h1>
 
         <p className="hero-sub">
-          Compre, venda e negocie veículos com segurança e transparência.
+          Compre, venda, troque e negocie veículos com segurança e
+          transparência.
         </p>
 
         {!currentUser ? (
@@ -313,7 +314,13 @@ export default function Home() {
       </main>
 
       <footer className="footer">
-        <span className="footer-brand">AutoZumm</span>
+        <div
+          className="footer-brand"
+          onClick={() => navigate("/")}
+          style={{ cursor: "pointer" }}
+        >
+          <img src="/logofull2.png" alt="AutoZoom" className="footer-logo" />
+        </div>
         <span className="footer-copy">
           © {new Date().getFullYear()} — Todos os direitos reservados
         </span>

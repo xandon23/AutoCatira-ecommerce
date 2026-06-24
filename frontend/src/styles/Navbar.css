@@ -18,8 +18,8 @@
 }
 
 .navbar-logo {
-  height: 165px;
-  width: 350px;
+  height: 150px;
+  width: auto;
   object-fit: contain;
 }
 

@@ -273,10 +273,12 @@
   outline: none;
   width: 100%;
   margin-top: 4px;
+  box-sizing: border-box;
 }
 
 .vehicle-detail-textarea {
   resize: vertical;
+  box-sizing: border-box;
 }
 
 .vehicle-detail-label {
@@ -425,6 +427,7 @@
   border: 1px solid #2a2c2f;
   margin-bottom: 20px;
   outline: none;
+  box-sizing: border-box;
 }
 
 .vehicle-detail-sell-confirm {

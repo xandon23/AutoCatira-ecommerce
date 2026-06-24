@@ -73,10 +73,12 @@
   font-size: 14px;
   outline: none;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .vehicle-form-textarea {
   resize: vertical;
+  box-sizing: border-box;
 }
 
 .vehicle-form-features {

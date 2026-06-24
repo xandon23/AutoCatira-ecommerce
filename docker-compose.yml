@@ -4,7 +4,7 @@ services:
   # ----------------------------------------
   db:
     image: mysql:8.0
-    container_name: autozoom_db
+    container_name: autocatira_db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -16,14 +16,14 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - autozoom_network
+      - autocatira_network
 
   # ----------------------------------------
   # BACK-END (API Node.js)
   # ----------------------------------------
   backend:
     build: ./backend
-    container_name: autozoom_backend
+    container_name: autocatira_backend
     restart: always
     # ports:
     #   - "3333:3333"
@@ -34,15 +34,17 @@ services:
       - DB_NAME=${MYSQL_DATABASE}
     depends_on:
       - db
+    volumes:
+      - ./backend/uploads:/app/uploads
     networks:
-      - autozoom_network
+      - autocatira_network
 
   # ----------------------------------------
   # FRONT-END (Interface React)
   # ----------------------------------------
   frontend:
     build: ./frontend
-    container_name: autozoom_frontend
+    container_name: autocatira_frontend
     restart: always
     # ports:
     #  - "3000:3000"
@@ -51,14 +53,14 @@ services:
     depends_on:
       - backend
     networks:
-      - autozoom_network
+      - autocatira_network
 
   # ----------------------------------------
   # NGINX
   # ----------------------------------------
   nginx:
     image: nginx:alpine
-    container_name: autozoom_nginx
+    container_name: autocatira_nginx
     ports:
       - "80:80" # Única porta aberta para o mundo real!
       - "443:443"
@@ -69,7 +71,7 @@ services:
       - backend
       - frontend
     networks:
-      - autozoom_network
+      - autocatira_network
 # ----------------------------------------
 # VOLUMES E REDES
 # ----------------------------------------
@@ -77,5 +79,5 @@ volumes:
   db_data:
 
 networks:
-  autozoom_network:
+  autocatira_network:
     driver: bridge

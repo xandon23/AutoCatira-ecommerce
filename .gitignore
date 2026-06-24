@@ -1,3 +1,4 @@
 node_modules/
 # Certificados Locais
 *.pem
+/.env

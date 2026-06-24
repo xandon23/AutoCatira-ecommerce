@@ -18,7 +18,7 @@ describe("CRUD de Veículos", () => {
   // login
   beforeEach(() => {
     cy.visit("/login");
-    cy.get('input[type="email"]').type("alexandre_1782175037462@teste.com");
+    cy.get('input[type="email"]').type("testee2e@teste.com");
     cy.get('input[type="password"]').type("Senha123@");
     cy.get('button[type="submit"]').click();
 

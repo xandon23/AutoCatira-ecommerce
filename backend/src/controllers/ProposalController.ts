@@ -31,7 +31,7 @@ export default class ProposalController {
         buyerId: userId,
         cashOffer: data.cashOffer,
         offeredVehicleId: data.offeredVehicleId || null,
-        status: "pending",
+        status: "PENDING",
         message: data.message || null,
       });
 
@@ -47,21 +47,36 @@ export default class ProposalController {
     res: Response,
   ): Promise<Response> {
     try {
+      const id = req.params.id as string;
       const { status } = req.body;
+      const userId = req.userId as string;
+
+      if (!id) {
+        throw new Error("ID da proposta não informado.|400");
+      }
+
       const proposal = await ProposalController.authorizeStatusUpdate(
-        req.params.id as string,
-        req.userId as string,
+        id,
+        userId,
         status,
       );
 
+      const validTransition =
+        (proposal.status === "PENDING" &&
+          ["IN_NEGOTIATION", "REJECTED"].includes(status)) ||
+        (proposal.status === "IN_NEGOTIATION" && status === "REJECTED");
+
+      if (!validTransition) {
+        throw new Error("Transição de status inválida.|400");
+      }
+
       await proposal.update({ status });
-      const msg =
-        status === "REJECTED"
-          ? "Negociação cancelada."
-          : "Negociação iniciada!";
-      return res.status(200).json({ message: msg, proposal });
+
+      return res
+        .status(200)
+        .json({ message: "Status atualizado com sucesso!" });
     } catch (error) {
-      return ProposalController.handleError(res, error, 400);
+      return ProposalController.handleError(res, error, 500);
     }
   }
 
@@ -137,14 +152,20 @@ export default class ProposalController {
     uid: string,
     st: string,
   ): Promise<Proposal> {
-    if (!["PENDING", "ACCEPTED", "REJECTED"].includes(st))
+    if (!["IN_NEGOTIATION", "REJECTED"].includes(st)) {
       throw new Error("Status inválido.|400");
+    }
+
     const p = await Proposal.findByPk(id, {
       include: [{ model: Vehicle, as: "targetVehicle" }],
     });
+
     if (!p) throw new Error("Proposta não encontrada.|404");
-    if ((p as any).targetVehicle?.userId !== uid)
+
+    if ((p as any).targetVehicle?.userId !== uid) {
       throw new Error("Acesso negado.|403");
+    }
+
     return p;
   }
 

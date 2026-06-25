@@ -36,7 +36,7 @@ export default function ProposalDetailPage() {
     try {
       await api.patch(`/proposals/${id}/status`, { status: decision });
       alert(
-        `Proposta ${decision === "ACCEPTED" ? "ACEITA" : "RECUSADA"} com sucesso!`,
+        `Proposta ${decision === "IN_NEGOTIATION" ? "EM NEGOCIAÇÃO" : "RECUSADA"} com sucesso!`,
       );
       navigate("/perfil");
     } catch (error: any) {
@@ -128,7 +128,7 @@ export default function ProposalDetailPage() {
         {proposal.status === "PENDING" && (
           <div className="proposal-actions">
             <button
-              onClick={() => handleDecision("ACCEPTED")}
+              onClick={() => handleDecision("IN_NEGOTIATION")}
               className="proposal-btn-accept"
             >
               ✓ ACEITAR PROPOSTA

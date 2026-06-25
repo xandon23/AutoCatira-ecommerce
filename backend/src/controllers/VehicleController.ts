@@ -107,15 +107,24 @@ export default class VehicleController {
     const t = await sequelize.transaction();
     try {
       const id = req.params.id as string;
-      const vehicle = await VehicleController.authorize(id, req.userId);
-      if (vehicle.status === "sold")
+      const sellerId = req.userId as string;
+      const vehicle = await VehicleController.authorize(id, sellerId);
+      if (vehicle.status === "sold") {
         throw new Error("Este veículo já consta como vendido|400");
+      }
 
       await vehicle.update(
         { status: "sold", buyerId: req.body.buyerId },
         { transaction: t },
       );
-      await VehicleController.manageProposals(id, req.body.buyerId, t);
+
+      await VehicleController.manageProposals(
+        id,
+        req.body.buyerId,
+        sellerId,
+        t,
+      );
+
       await t.commit();
       return res.status(200).json({ message: "Venda finalizada com sucesso!" });
     } catch (error) {
@@ -177,19 +186,32 @@ export default class VehicleController {
   private static async manageProposals(
     vId: string,
     bId: string,
+    sellerId: string,
     t: any,
   ): Promise<void> {
+    const winningProposal = await Proposal.findOne({
+      where: { targetVehicleId: vId, buyerId: bId },
+      transaction: t,
+    });
+
+    if (winningProposal) {
+      await winningProposal.update({ status: "ACCEPTED" }, { transaction: t });
+
+      if (winningProposal.offeredVehicleId) {
+        await Vehicle.update(
+          { status: "sold", buyerId: sellerId },
+          { where: { id: winningProposal.offeredVehicleId }, transaction: t },
+        );
+      }
+    }
+
     await Proposal.update(
-      { status: "ACCEPTED" },
-      { where: { targetVehicleId: vId, buyerId: bId }, transaction: t },
-    );
-    await Proposal.update(
-      { status: "rejected" },
+      { status: "REJECTED" },
       {
         where: {
           targetVehicleId: vId,
           buyerId: { [Op.ne]: bId },
-          status: ["pending", "in_negotiation"],
+          status: ["PENDING", "IN_NEGOTIATION"],
         },
         transaction: t,
       },

@@ -377,7 +377,7 @@ export default function VehicleDetailPage() {
               >
                 <option value="">Selecione...</option>
                 {proposals
-                  .filter((p) => p.status === "ACCEPTED")
+                  .filter((p) => p.status === "IN_NEGOTIATION")
                   .map((p) => (
                     <option key={p.id} value={p.buyerId}>
                       {p.buyer?.name || "Comprador"} (Proposta Aceita)
@@ -443,13 +443,23 @@ function ProposalList({ proposals, onUpdateStatus }: ProposalListProps) {
                 })}
               </strong>
               <span
-                className={`vehicle-detail-proposal-badge ${p.status === "ACCEPTED" ? "badge-accepted" : p.status === "REJECTED" ? "badge-rejected" : "badge-pending"}`}
+                className={`vehicle-detail-proposal-badge ${
+                  p.status === "ACCEPTED"
+                    ? "badge-accepted"
+                    : p.status === "IN_NEGOTIATION"
+                      ? "badge-negotiation"
+                      : p.status === "REJECTED"
+                        ? "badge-rejected"
+                        : "badge-pending"
+                }`}
               >
                 {p.status === "PENDING"
                   ? "Pendente"
-                  : p.status === "ACCEPTED"
-                    ? "Aceita"
-                    : "Recusada"}
+                  : p.status === "IN_NEGOTIATION"
+                    ? "Em negociação"
+                    : p.status === "ACCEPTED"
+                      ? "Aceita"
+                      : "Recusada"}
               </span>
             </div>
             <p className="vehicle-detail-proposal-buyer">
@@ -462,7 +472,7 @@ function ProposalList({ proposals, onUpdateStatus }: ProposalListProps) {
             {p.status === "PENDING" && (
               <div className="vehicle-detail-proposal-actions">
                 <button
-                  onClick={() => p.id && onUpdateStatus(p.id, "ACCEPTED")}
+                  onClick={() => p.id && onUpdateStatus(p.id, "IN_NEGOTIATION")}
                   className="btn-accept-prop"
                 >
                   Aceitar

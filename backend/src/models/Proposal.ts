@@ -25,7 +25,7 @@ export default class Proposal extends Model {
   declare cashOffer: number;
 
   @Column({
-    type: DataType.ENUM("PENDING", "ACCEPTED", "REJECTED"),
+    type: DataType.ENUM("PENDING", "IN_NEGOTIATION", "ACCEPTED", "REJECTED"),
     defaultValue: "PENDING",
     allowNull: false,
   })

@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
+import axios from "axios";
 
 import { AppButton } from "../components/AppButton";
 import { AppInput } from "../components/AppInput";
@@ -31,9 +32,24 @@ export function LoginScreen() {
 
       await signIn(email.trim().toLowerCase(), password);
     } catch (error) {
-      console.error(error);
+      if (axios.isAxiosError(error)) {
+        console.log(
+          "Falha no login:",
+          error.response?.status,
+          error.response?.data,
+        );
 
-      Alert.alert("Erro", "E-mail ou senha inválidos.");
+        Alert.alert(
+          "Erro no login",
+          error.response?.data?.error ||
+            error.response?.data?.message ||
+            "E-mail ou senha inválidos.",
+        );
+      } else {
+        console.log("Erro inesperado no login:", error);
+
+        Alert.alert("Erro", "Ocorreu um erro inesperado.");
+      }
     } finally {
       setLoading(false);
     }

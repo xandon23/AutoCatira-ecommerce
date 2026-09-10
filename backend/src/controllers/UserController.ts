@@ -77,10 +77,12 @@ export default class UserController {
     }
   }
 
-  static async delete(req: Request, res: Response): Promise<Response> {
+  static async delete(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const deleted = await User.destroy({ where: { id: req.params.id } });
-      if (!deleted) throw new Error("Utilizador não encontrado|404");
+      const user = await UserController.validateOwnership(req);
+
+      await user.destroy();
+
       return res.status(204).send();
     } catch (error) {
       return UserController.handleError(res, error, 500);

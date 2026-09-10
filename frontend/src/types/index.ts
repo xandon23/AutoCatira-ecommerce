@@ -30,12 +30,18 @@ export interface IVehicle {
   Buyer?: { name: string };
 }
 
+export type ProposalStatus =
+  | "PENDING"
+  | "IN_NEGOTIATION"
+  | "ACCEPTED"
+  | "REJECTED";
+
 export interface IProposal {
   id?: string;
   targetVehicleId: string;
   cashOffer: number | string;
   offeredVehicleId?: string;
-  status?: string;
+  status?: ProposalStatus;
   message?: string;
   buyerId?: string;
   buyer?: { name: string; email?: string };

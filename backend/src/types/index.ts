@@ -40,6 +40,12 @@ export interface IVehicleImage {
   url: string;
 }
 
+export type ProposalStatus =
+  | "PENDING"
+  | "IN_NEGOTIATION"
+  | "ACCEPTED"
+  | "REJECTED";
+
 export interface IProposal {
   id?: string;
   targetVehicleId: string;
@@ -47,7 +53,7 @@ export interface IProposal {
   offeredVehicleId?: string | null;
   cashOffer: number;
   message?: string | null;
-  status: "pending" | "ACCEPTED" | "rejected";
+  status: ProposalStatus;
   targetVehicle?: IVehicle;
   offeredVehicle?: IVehicle;
   buyer?: Partial<IUser>;

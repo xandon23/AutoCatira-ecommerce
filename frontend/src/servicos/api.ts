@@ -110,7 +110,7 @@ export const addVehicleImage = async (
 };
 
 export const deleteVehicleImage = async (id: string): Promise<void> => {
-  await api.delete(`/images/${id}`);
+  await api.delete(`/vehicles/images/${id}`);
 };
 
 // ─── PROPOSALS ────────────────────────────────────────────────────────────────

@@ -1,7 +1,10 @@
+export type UserRole = "USER" | "ADMIN";
+
 export interface IUser {
   id?: string;
   name: string;
   email: string;
+  role: UserRole;
   password?: string;
   cpf?: string;
   phone: string;

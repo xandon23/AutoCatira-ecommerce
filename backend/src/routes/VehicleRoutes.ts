@@ -4,6 +4,7 @@ import { multerConfig } from "../config/multer";
 import VehicleController from "../controllers/VehicleController";
 import VehicleImageController from "../controllers/VehicleImageController";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import { vehicleOwnershipMiddleware } from "../middlewares/vehicleOwnershipMiddleware";
 
 const router = Router();
 const upload = multer(multerConfig);
@@ -19,6 +20,7 @@ router.patch("/:id/sell", authMiddleware, VehicleController.sell);
 router.post(
   "/:vehicleId/images",
   authMiddleware,
+  vehicleOwnershipMiddleware,
   upload.single("image"),
   VehicleImageController.upload,
 );

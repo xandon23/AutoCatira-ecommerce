@@ -6,5 +6,11 @@ import { adminMiddleware } from "../middlewares/adminMiddleware";
 const router = Router();
 
 router.get("/users", authMiddleware, adminMiddleware, AdminController.getUsers);
+router.patch(
+  "/users/:id/role",
+  authMiddleware,
+  adminMiddleware,
+  AdminController.updateUserRole,
+);
 
 export default router;

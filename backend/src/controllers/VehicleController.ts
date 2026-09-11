@@ -108,9 +108,15 @@ export default class VehicleController {
   static async update(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const id = req.params.id as string;
+
       const vehicle = await VehicleController.authorize(id, req.userId);
 
-      await vehicle.update(VehicleController.whitelist(req.body as IVehicle));
+      const data = req.body as IVehicle;
+
+      VehicleController.validateVehicleData(data);
+
+      await vehicle.update(VehicleController.whitelist(data));
+
       return res
         .status(200)
         .json({ message: "Anúncio atualizado com sucesso!" });

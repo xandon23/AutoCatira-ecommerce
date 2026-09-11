@@ -36,3 +36,24 @@ export async function createVehicle(
 
   return response.data;
 }
+
+interface VehicleImageUpload {
+  uri: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+}
+
+export async function uploadVehicleImage(
+  vehicleId: string,
+  image: VehicleImageUpload,
+): Promise<void> {
+  const formData = new FormData();
+
+  formData.append("image", {
+    uri: image.uri,
+    name: image.fileName || `vehicle-${Date.now()}.jpg`,
+    type: image.mimeType || "image/jpeg",
+  } as any);
+
+  await api.post(`/vehicles/${vehicleId}/images`, formData);
+}

@@ -1,3 +1,4 @@
+import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
 import { useState } from "react";
 import {
@@ -9,13 +10,14 @@ import {
   StyleSheet,
   Text,
   View,
+  Image,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { AppButton } from "../components/AppButton";
 import { AppInput } from "../components/AppInput";
 import { RootStackParamList } from "../navigation/types";
-import { createVehicle } from "../services/vehicleService";
+import { createVehicle, uploadVehicleImage } from "../services/vehicleService";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CreateVehicle">;
 
@@ -47,6 +49,8 @@ export function CreateVehicleScreen({ navigation }: Props) {
   const [description, setDescription] = useState("");
   const [features, setFeatures] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedImage, setSelectedImage] =
+    useState<ImagePicker.ImagePickerAsset | null>(null);
 
   function toggleFeature(feature: string) {
     setFeatures((current) =>
@@ -104,12 +108,43 @@ export function CreateVehicleScreen({ navigation }: Props) {
         features,
       });
 
-      Alert.alert("Sucesso", response.message, [
-        {
-          text: "OK",
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      if (selectedImage) {
+        try {
+          await uploadVehicleImage(response.vehicle.id, {
+            uri: selectedImage.uri,
+            fileName: selectedImage.fileName,
+            mimeType: selectedImage.mimeType,
+          });
+        } catch (imageError) {
+          console.log("Erro ao enviar imagem:", imageError);
+
+          Alert.alert(
+            "Veículo cadastrado",
+            "O veículo foi cadastrado, mas não foi possível enviar a imagem.",
+            [
+              {
+                text: "OK",
+                onPress: () => navigation.goBack(),
+              },
+            ],
+          );
+
+          return;
+        }
+      }
+
+      Alert.alert(
+        "Sucesso",
+        selectedImage
+          ? "Veículo e imagem cadastrados com sucesso!"
+          : response.message,
+        [
+          {
+            text: "OK",
+            onPress: () => navigation.goBack(),
+          },
+        ],
+      );
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.log(
@@ -133,6 +168,19 @@ export function CreateVehicleScreen({ navigation }: Props) {
     }
   }
 
+  async function handleSelectImage() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setSelectedImage(result.assets[0]);
+    }
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -142,6 +190,20 @@ export function CreateVehicleScreen({ navigation }: Props) {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
+        <Text style={styles.sectionTitle}>Fotos do veículo</Text>
+
+        <Pressable style={styles.imageButton} onPress={handleSelectImage}>
+          <Text style={styles.imageButtonText}>+ Selecionar foto</Text>
+        </Pressable>
+
+        {selectedImage && (
+          <Image
+            source={{ uri: selectedImage.uri }}
+            style={styles.preview}
+            resizeMode="cover"
+          />
+        )}
+
         <Text style={styles.sectionTitle}>Identificação</Text>
 
         <AppInput placeholder="Marca" value={brand} onChangeText={setBrand} />
@@ -340,5 +402,26 @@ const styles = StyleSheet.create({
 
   submit: {
     marginTop: 24,
+  },
+
+  imageButton: {
+    height: 52,
+    borderWidth: 1,
+    borderColor: "#bbb",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  imageButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  preview: {
+    width: "100%",
+    height: 220,
+    borderRadius: 12,
   },
 });

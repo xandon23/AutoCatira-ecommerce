@@ -1,4 +1,7 @@
 import { useCallback, useState } from "react";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { AppButton } from "../components/AppButton";
+import { RootStackParamList } from "../navigation/types";
 
 import {
   ActivityIndicator,
@@ -16,7 +19,9 @@ import { VehicleCard } from "../components/VehicleCard";
 import { getMyVehicles } from "../services/vehicleService";
 import { IVehicle } from "../types";
 
-export function MyVehiclesScreen() {
+type Props = NativeStackScreenProps<RootStackParamList, "MyVehicles">;
+
+export function MyVehiclesScreen({ navigation }: Props) {
   const [vehicles, setVehicles] = useState<IVehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,6 +78,12 @@ export function MyVehiclesScreen() {
           <Text style={styles.subtitle}>
             {vehicles.length} veículo(s) cadastrado(s)
           </Text>
+          <View style={styles.newVehicle}>
+            <AppButton
+              title="+ Novo anúncio"
+              onPress={() => navigation.navigate("CreateVehicle")}
+            />
+          </View>
         </View>
       }
       ListEmptyComponent={
@@ -148,5 +159,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: "#666",
     textAlign: "center",
+  },
+
+  newVehicle: {
+    marginTop: 18,
   },
 });

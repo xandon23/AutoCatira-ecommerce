@@ -48,3 +48,22 @@ export interface VehiclesResponse {
   totalPages: number;
   vehicles: IVehicle[];
 }
+
+export interface IVehicleInput {
+  brand: string;
+  model: string;
+  engine: string;
+  transmission: string;
+  location: string;
+  mileage: number;
+  price: number;
+  description: string;
+  features: string[];
+  manufactureYear: number;
+  modelYear: number;
+}
+
+export interface CreateVehicleResponse {
+  message: string;
+  vehicle: IVehicle;
+}

@@ -80,6 +80,12 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
               <Text style={styles.welcome}>
                 Olá, {user?.name.split(" ")[0]}!
               </Text>
+              <View style={styles.actions}>
+                <AppButton
+                  title="Meus anúncios"
+                  onPress={() => navigation.navigate("MyVehicles")}
+                />
+              </View>
             </View>
 
             <Text style={styles.sectionTitle}>Veículos disponíveis</Text>
@@ -163,5 +169,8 @@ const styles = StyleSheet.create({
 
   footer: {
     marginTop: 20,
+  },
+  actions: {
+    marginTop: 18,
   },
 });

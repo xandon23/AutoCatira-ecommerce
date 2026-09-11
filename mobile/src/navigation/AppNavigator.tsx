@@ -7,6 +7,7 @@ import { HomeScreen } from "../screens/HomeScreen";
 import { LoginScreen } from "../screens/LoginScreen";
 import { VehicleDetailScreen } from "../screens/VehicleDetailScreen";
 import { RootStackParamList } from "./types";
+import { MyVehiclesScreen } from "../screens/MyVehiclesScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -31,6 +32,15 @@ export function AppNavigator() {
               component={HomeScreen}
               options={{
                 headerShown: false,
+              }}
+            />
+
+            <Stack.Screen
+              name="MyVehicles"
+              component={MyVehiclesScreen}
+              options={{
+                headerShown: true,
+                title: "Meus anúncios",
               }}
             />
 

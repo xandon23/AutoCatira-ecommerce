@@ -17,3 +17,9 @@ export async function getVehicleById(id: string): Promise<IVehicle> {
 
   return response.data;
 }
+
+export async function getMyVehicles(): Promise<IVehicle[]> {
+  const response = await api.get<IVehicle[]>("/vehicles/mine");
+
+  return response.data;
+}

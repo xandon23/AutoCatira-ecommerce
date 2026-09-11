@@ -64,6 +64,33 @@ export default class VehicleController {
     }
   }
 
+  static async getMine(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const vehicles = await Vehicle.findAll({
+        where: {
+          userId: req.userId,
+        },
+        order: [["createdAt", "DESC"]],
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["name", "email"],
+          },
+          {
+            model: VehicleImage,
+            as: "images",
+            attributes: ["id", "url"],
+          },
+        ],
+      });
+
+      return res.status(200).json(vehicles);
+    } catch (error) {
+      return VehicleController.handleError(res, error, 500);
+    }
+  }
+
   static async getById(req: Request, res: Response): Promise<Response> {
     try {
       const id = req.params.id as string;

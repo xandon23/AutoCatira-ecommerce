@@ -98,9 +98,11 @@ export function MyVehiclesScreen({ navigation }: Props) {
       renderItem={({ item }) => (
         <VehicleCard
           vehicle={item}
-          onPress={() => {
-            // Vamos colocar edição aqui no próximo passo.
-          }}
+          onPress={() =>
+            navigation.navigate("EditVehicle", {
+              vehicleId: item.id,
+            })
+          }
         />
       )}
     />

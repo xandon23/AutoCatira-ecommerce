@@ -57,3 +57,19 @@ export async function uploadVehicleImage(
 
   await api.post(`/vehicles/${vehicleId}/images`, formData);
 }
+
+interface UpdateVehicleResponse {
+  message: string;
+}
+
+export async function updateVehicle(
+  vehicleId: string,
+  data: IVehicleInput,
+): Promise<UpdateVehicleResponse> {
+  const response = await api.put<UpdateVehicleResponse>(
+    `/vehicles/${vehicleId}`,
+    data,
+  );
+
+  return response.data;
+}

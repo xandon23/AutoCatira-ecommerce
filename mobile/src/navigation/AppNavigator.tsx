@@ -9,6 +9,7 @@ import { VehicleDetailScreen } from "../screens/VehicleDetailScreen";
 import { RootStackParamList } from "./types";
 import { MyVehiclesScreen } from "../screens/MyVehiclesScreen";
 import { CreateVehicleScreen } from "../screens/CreateVehicleScreen";
+import { EditVehicleScreen } from "../screens/EditVehicleScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -60,6 +61,15 @@ export function AppNavigator() {
               options={{
                 headerShown: true,
                 title: "Detalhes do veículo",
+              }}
+            />
+
+            <Stack.Screen
+              name="EditVehicle"
+              component={EditVehicleScreen}
+              options={{
+                headerShown: true,
+                title: "Editar anúncio",
               }}
             />
           </>

@@ -7,4 +7,7 @@ export type RootStackParamList = {
   VehicleDetail: {
     vehicleId: string;
   };
+  EditVehicle: {
+    vehicleId: string;
+  };
 };

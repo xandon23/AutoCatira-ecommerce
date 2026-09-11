@@ -1,14 +1,14 @@
 import { NavigationContainer } from "@react-navigation/native";
-
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { useAuth } from "../contexts/AuthContext";
 import { HomeScreen } from "../screens/HomeScreen";
 import { LoginScreen } from "../screens/LoginScreen";
+import { VehicleDetailScreen } from "../screens/VehicleDetailScreen";
+import { RootStackParamList } from "./types";
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function AppNavigator() {
   const { user, loading } = useAuth();
@@ -23,15 +23,34 @@ export function AppNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
+      <Stack.Navigator>
         {user ? (
-          <Stack.Screen name="Home" component={HomeScreen} />
+          <>
+            <Stack.Screen
+              name="Home"
+              component={HomeScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+
+            <Stack.Screen
+              name="VehicleDetail"
+              component={VehicleDetailScreen}
+              options={{
+                headerShown: true,
+                title: "Detalhes do veículo",
+              }}
+            />
+          </>
         ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
         )}
       </Stack.Navigator>
     </NavigationContainer>

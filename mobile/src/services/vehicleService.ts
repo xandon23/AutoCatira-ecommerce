@@ -73,3 +73,7 @@ export async function updateVehicle(
 
   return response.data;
 }
+
+export async function deleteVehicle(vehicleId: string): Promise<void> {
+  await api.delete(`/vehicles/${vehicleId}`);
+}

@@ -152,6 +152,12 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             "Essa funcionalidade será implementada posteriormente.",
           );
         }}
+        isAdmin={user?.role === "ADMIN"}
+        onAdmin={() => {
+          setMenuVisible(false);
+
+          navigation.navigate("Admin");
+        }}
         onSignOut={handleSignOut}
       />
     </View>

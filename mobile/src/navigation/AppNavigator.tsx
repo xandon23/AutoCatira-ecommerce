@@ -13,6 +13,7 @@ import { EditVehicleScreen } from "../screens/EditVehicleScreen";
 import { ReceivedProposalsScreen } from "../screens/ReceivedProposalsScreen";
 import { VehicleProposalsScreen } from "../screens/VehicleProposalsScreen";
 import { NegotiationsScreen } from "../screens/NegotiationsScreen";
+import { AdminScreen } from "../screens/AdminScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -100,6 +101,15 @@ export function AppNavigator() {
               options={{
                 headerShown: true,
                 title: "Negociações",
+              }}
+            />
+
+            <Stack.Screen
+              name="Admin"
+              component={AdminScreen}
+              options={{
+                headerShown: true,
+                title: "Administração",
               }}
             />
           </>

@@ -11,6 +11,8 @@ interface ProfileMenuProps {
   onReviews: () => void;
   onSignOut: () => void;
   onNegotiations: () => void;
+  isAdmin: boolean;
+  onAdmin: () => void;
 }
 
 export function ProfileMenu({
@@ -22,6 +24,8 @@ export function ProfileMenu({
   onReviews,
   onSignOut,
   onNegotiations,
+  isAdmin,
+  onAdmin,
 }: ProfileMenuProps) {
   const firstName = userName?.trim().split(" ")[0] || "Usuário";
 
@@ -63,6 +67,8 @@ export function ProfileMenu({
           <MenuItem title="Negociações" onPress={onNegotiations} />
 
           <MenuItem title="Avaliações" onPress={onReviews} />
+
+          {isAdmin && <MenuItem title="Administração" onPress={onAdmin} />}
 
           <View style={styles.divider} />
 

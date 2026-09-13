@@ -1,28 +1,53 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
+import axios from "axios";
+import { Picker } from "@react-native-picker/picker";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
+import { AppButton } from "../components/AppButton";
+import { AppInput } from "../components/AppInput";
+import { useAuth } from "../contexts/AuthContext";
 import { RootStackParamList } from "../navigation/types";
-import { IVehicle } from "../types";
-import { getVehicleById } from "../services/vehicleService";
 import { getImageUrl } from "../services/api";
+import { createProposal } from "../services/proposalService";
+import { getMyVehicles, getVehicleById } from "../services/vehicleService";
+import { IVehicle } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "VehicleDetail">;
 
 export function VehicleDetailScreen({ route }: Props) {
   const { vehicleId } = route.params;
 
+  const { user } = useAuth();
+
   const [vehicle, setVehicle] = useState<IVehicle | null>(null);
 
   const [loading, setLoading] = useState(true);
+
+  const [showProposalForm, setShowProposalForm] = useState(false);
+
+  const [cashOffer, setCashOffer] = useState("");
+
+  const [message, setMessage] = useState("");
+
+  const [offeredVehicleId, setOfferedVehicleId] = useState("");
+
+  const [myVehicles, setMyVehicles] = useState<IVehicle[]>([]);
+
+  const [proposalLoading, setProposalLoading] = useState(false);
+
+  const isOwner =
+    !!user && !!vehicle && String(user.id) === String(vehicle.userId);
 
   useEffect(() => {
     async function loadVehicle() {
@@ -39,6 +64,85 @@ export function VehicleDetailScreen({ route }: Props) {
 
     loadVehicle();
   }, [vehicleId]);
+
+  useEffect(() => {
+    async function loadMyVehicles() {
+      if (!vehicle || isOwner) {
+        return;
+      }
+
+      try {
+        const vehicles = await getMyVehicles();
+
+        setMyVehicles(
+          vehicles.filter(
+            (item) =>
+              item.status === "available" &&
+              String(item.id) !== String(vehicle.id),
+          ),
+        );
+      } catch (error) {
+        console.log("Erro ao carregar veículos do usuário:", error);
+      }
+    }
+
+    loadMyVehicles();
+  }, [vehicle, isOwner]);
+
+  async function handleSendProposal() {
+    const value = Number(cashOffer.replace(",", "."));
+
+    if (!cashOffer.trim() || Number.isNaN(value)) {
+      Alert.alert("Atenção", "Informe um valor válido para a proposta.");
+
+      return;
+    }
+
+    if (!offeredVehicleId && value <= 0) {
+      Alert.alert("Atenção", "O valor da proposta deve ser maior que zero.");
+
+      return;
+    }
+
+    if (offeredVehicleId && value < 0) {
+      Alert.alert("Atenção", "O valor em dinheiro não pode ser negativo.");
+
+      return;
+    }
+
+    try {
+      setProposalLoading(true);
+
+      const response = await createProposal({
+        targetVehicleId: vehicleId,
+        cashOffer: value,
+
+        message: message.trim() || undefined,
+
+        offeredVehicleId: offeredVehicleId || undefined,
+      });
+
+      Alert.alert("Sucesso", response.message);
+
+      setCashOffer("");
+      setMessage("");
+      setOfferedVehicleId("");
+      setShowProposalForm(false);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        Alert.alert(
+          "Erro",
+          error.response?.data?.error || "Não foi possível enviar a proposta.",
+        );
+
+        return;
+      }
+
+      Alert.alert("Erro", "Ocorreu um erro inesperado.");
+    } finally {
+      setProposalLoading(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -132,6 +236,71 @@ export function VehicleDetailScreen({ route }: Props) {
           {vehicle.user?.name || "Vendedor"}
         </Text>
       </View>
+
+      {!isOwner && !showProposalForm && (
+        <View style={styles.proposalSection}>
+          <AppButton
+            title="Fazer proposta"
+            onPress={() => setShowProposalForm(true)}
+          />
+        </View>
+      )}
+
+      {!isOwner && showProposalForm && (
+        <View style={styles.proposalBox}>
+          <Text style={styles.proposalTitle}>Fazer proposta</Text>
+
+          <Text style={styles.proposalLabel}>Valor em dinheiro (R$)</Text>
+
+          <AppInput
+            placeholder="Ex: 15000"
+            value={cashOffer}
+            onChangeText={setCashOffer}
+            keyboardType="decimal-pad"
+          />
+
+          <Text style={styles.proposalLabel}>Veículo na troca</Text>
+
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={offeredVehicleId}
+              onValueChange={(value) => setOfferedVehicleId(value)}
+            >
+              <Picker.Item label="Somente dinheiro" value="" />
+
+              {myVehicles.map((item) => (
+                <Picker.Item
+                  key={item.id}
+                  label={`${item.brand} ${item.model} - ${item.manufactureYear}`}
+                  value={item.id}
+                />
+              ))}
+            </Picker>
+          </View>
+
+          <Text style={styles.proposalLabel}>Mensagem</Text>
+
+          <AppInput
+            placeholder="Mensagem para o vendedor"
+            value={message}
+            onChangeText={setMessage}
+            multiline
+          />
+
+          <AppButton
+            title="Enviar proposta"
+            onPress={handleSendProposal}
+            loading={proposalLoading}
+          />
+
+          <Pressable
+            style={styles.cancelProposal}
+            onPress={() => setShowProposalForm(false)}
+          >
+            <Text style={styles.cancelProposalText}>Cancelar</Text>
+          </Pressable>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -234,5 +403,46 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 23,
     color: "#444",
+  },
+
+  proposalSection: {
+    marginHorizontal: 20,
+    marginTop: 10,
+  },
+
+  proposalBox: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    gap: 12,
+  },
+
+  proposalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+
+  proposalLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#cccccc",
+    borderRadius: 10,
+    overflow: "hidden",
+    backgroundColor: "#ffffff",
+  },
+
+  cancelProposal: {
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+
+  cancelProposalText: {
+    fontWeight: "600",
   },
 });

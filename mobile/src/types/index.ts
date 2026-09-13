@@ -67,3 +67,40 @@ export interface CreateVehicleResponse {
   message: string;
   vehicle: IVehicle;
 }
+
+export type ProposalStatus =
+  | "PENDING"
+  | "IN_NEGOTIATION"
+  | "ACCEPTED"
+  | "REJECTED";
+
+export interface IProposal {
+  id: string;
+  cashOffer: number;
+  status: ProposalStatus;
+  message?: string | null;
+
+  buyerId: string;
+  targetVehicleId: string;
+  offeredVehicleId?: string | null;
+
+  buyer?: {
+    name?: string;
+    phone?: string;
+    email?: string;
+  };
+
+  offeredVehicle?: IVehicle;
+}
+
+export interface CreateProposalInput {
+  targetVehicleId: string;
+  cashOffer: number;
+  message?: string;
+  offeredVehicleId?: string;
+}
+
+export interface CreateProposalResponse {
+  message: string;
+  proposal: IProposal;
+}

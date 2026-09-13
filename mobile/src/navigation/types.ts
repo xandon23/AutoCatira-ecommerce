@@ -4,6 +4,8 @@ export type RootStackParamList = {
   MyVehicles: undefined;
   CreateVehicle: undefined;
 
+  ReceivedProposals: undefined;
+
   VehicleDetail: {
     vehicleId: string;
   };

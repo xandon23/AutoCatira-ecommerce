@@ -80,15 +80,98 @@ export default class ProposalController {
     }
   }
 
-  static async getByVehicle(req: Request, res: Response): Promise<Response> {
+  static async getReceivedVehicles(
+    req: AuthRequest,
+    res: Response,
+  ): Promise<Response> {
     try {
-      const proposals = await Proposal.findAll({
-        where: { targetVehicleId: req.params.vehicleId },
+      const userId = req.userId as string;
+
+      const vehicles = await Vehicle.findAll({
+        where: {
+          userId,
+        },
         include: [
-          { model: User, as: "buyer", attributes: ["name", "phone"] },
-          { model: Vehicle, as: "offeredVehicle" },
+          {
+            model: Proposal,
+            as: "receivedProposals",
+            where: {
+              status: "PENDING",
+            },
+            attributes: ["id"],
+            required: true,
+          },
+          {
+            model: VehicleImage,
+            as: "images",
+            attributes: ["id", "url"],
+          },
         ],
+        order: [["createdAt", "DESC"]],
       });
+
+      const result = vehicles.map((vehicle) => {
+        const data = vehicle.get({
+          plain: true,
+        }) as any;
+
+        return {
+          ...data,
+
+          pendingProposalCount: data.receivedProposals?.length ?? 0,
+
+          receivedProposals: undefined,
+        };
+      });
+
+      return res.status(200).json(result);
+    } catch (error) {
+      return ProposalController.handleError(res, error, 500);
+    }
+  }
+
+  static async getByVehicle(
+    req: AuthRequest,
+    res: Response,
+  ): Promise<Response> {
+    try {
+      const vehicleId = req.params.vehicleId as string;
+
+      const vehicle = await Vehicle.findByPk(vehicleId);
+
+      if (!vehicle) {
+        throw new Error("Veículo não encontrado.|404");
+      }
+
+      if (String(vehicle.userId) !== String(req.userId)) {
+        throw new Error("Acesso negado.|403");
+      }
+
+      const proposals = await Proposal.findAll({
+        where: {
+          targetVehicleId: vehicleId,
+        },
+        include: [
+          {
+            model: User,
+            as: "buyer",
+            attributes: ["name", "phone"],
+          },
+          {
+            model: Vehicle,
+            as: "offeredVehicle",
+            include: [
+              {
+                model: VehicleImage,
+                as: "images",
+                attributes: ["id", "url"],
+              },
+            ],
+          },
+        ],
+        order: [["createdAt", "DESC"]],
+      });
+
       return res.status(200).json(proposals);
     } catch (error) {
       return ProposalController.handleError(res, error, 500);

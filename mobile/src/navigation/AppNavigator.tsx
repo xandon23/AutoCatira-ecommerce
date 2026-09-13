@@ -10,6 +10,7 @@ import { RootStackParamList } from "./types";
 import { MyVehiclesScreen } from "../screens/MyVehiclesScreen";
 import { CreateVehicleScreen } from "../screens/CreateVehicleScreen";
 import { EditVehicleScreen } from "../screens/EditVehicleScreen";
+import { ReceivedProposalsScreen } from "../screens/ReceivedProposalsScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -70,6 +71,15 @@ export function AppNavigator() {
               options={{
                 headerShown: true,
                 title: "Editar anúncio",
+              }}
+            />
+
+            <Stack.Screen
+              name="ReceivedProposals"
+              component={ReceivedProposalsScreen}
+              options={{
+                headerShown: true,
+                title: "Propostas recebidas",
               }}
             />
           </>

@@ -4,6 +4,7 @@ import {
   CreateProposalInput,
   CreateProposalResponse,
   IProposal,
+  IReceivedProposalVehicle,
   ProposalStatus,
 } from "../types";
 
@@ -32,6 +33,16 @@ export async function updateProposalStatus(
   const response = await api.patch<{
     message: string;
   }>(`/proposals/${proposalId}/status`, { status });
+
+  return response.data;
+}
+
+export async function getReceivedProposalVehicles(): Promise<
+  IReceivedProposalVehicle[]
+> {
+  const response = await api.get<IReceivedProposalVehicle[]>(
+    "/proposals/received/vehicles",
+  );
 
   return response.data;
 }

@@ -43,6 +43,10 @@ export interface IVehicle {
   updatedAt?: string;
 }
 
+export interface IReceivedProposalVehicle extends IVehicle {
+  pendingProposalCount: number;
+}
+
 export interface VehiclesResponse {
   total: number;
   totalPages: number;

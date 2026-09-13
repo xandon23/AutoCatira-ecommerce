@@ -12,6 +12,12 @@ router.get(
   ProposalController.getByVehicle,
 );
 
+router.get(
+  "/received/vehicles",
+  authMiddleware,
+  ProposalController.getReceivedVehicles,
+);
+
 router.get("/:id", authMiddleware, ProposalController.getById);
 
 router.put("/:id/status", authMiddleware, ProposalController.updateStatus);

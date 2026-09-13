@@ -137,10 +137,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         onProposals={() => {
           setMenuVisible(false);
 
-          Alert.alert(
-            "Propostas recebidas",
-            "Vamos conectar essa tela no próximo passo.",
-          );
+          navigation.navigate("ReceivedProposals");
         }}
         onReviews={() => {
           setMenuVisible(false);

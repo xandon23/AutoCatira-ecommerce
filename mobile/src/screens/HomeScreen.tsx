@@ -19,6 +19,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { RootStackParamList } from "../navigation/types";
 import { getVehicles } from "../services/vehicleService";
 import { IVehicle } from "../types";
+import { useFocusEffect } from "@react-navigation/native";
 
 interface HomeScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList, "Home">;
@@ -50,9 +51,11 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     }
   }, []);
 
-  useEffect(() => {
-    loadVehicles();
-  }, [loadVehicles]);
+  useFocusEffect(
+    useCallback(() => {
+      loadVehicles();
+    }, [loadVehicles]),
+  );
 
   function handleRefresh() {
     setRefreshing(true);

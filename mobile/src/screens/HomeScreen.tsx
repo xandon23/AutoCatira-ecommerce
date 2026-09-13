@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -11,12 +13,12 @@ import {
 
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
+import { ProfileMenu } from "../components/ProfileMenu";
 import { VehicleCard } from "../components/VehicleCard";
-import { AppButton } from "../components/AppButton";
 import { useAuth } from "../contexts/AuthContext";
+import { RootStackParamList } from "../navigation/types";
 import { getVehicles } from "../services/vehicleService";
 import { IVehicle } from "../types";
-import { RootStackParamList } from "../navigation/types";
 
 interface HomeScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList, "Home">;
@@ -26,8 +28,12 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const { user, signOut } = useAuth();
 
   const [vehicles, setVehicles] = useState<IVehicle[]>([]);
+
   const [loading, setLoading] = useState(true);
+
   const [refreshing, setRefreshing] = useState(false);
+
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const loadVehicles = useCallback(async () => {
     try {
@@ -53,6 +59,12 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     loadVehicles();
   }
 
+  async function handleSignOut() {
+    setMenuVisible(false);
+
+    await signOut();
+  }
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -62,6 +74,8 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       </View>
     );
   }
+
+  const firstName = user?.name?.trim().split(" ")[0] || "Usuário";
 
   return (
     <View style={styles.container}>
@@ -74,18 +88,21 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         }
         ListHeaderComponent={
           <View style={styles.header}>
-            <View>
-              <Text style={styles.logo}>AutoCatira</Text>
+            <View style={styles.topBar}>
+              <View>
+                <Text style={styles.logo}>AutoCatira</Text>
 
-              <Text style={styles.welcome}>
-                Olá, {user?.name.split(" ")[0]}!
-              </Text>
-              <View style={styles.actions}>
-                <AppButton
-                  title="Meus anúncios"
-                  onPress={() => navigation.navigate("MyVehicles")}
-                />
+                <Text style={styles.welcome}>Olá, {firstName}!</Text>
               </View>
+
+              <Pressable
+                style={styles.profileButton}
+                onPress={() => setMenuVisible(true)}
+              >
+                <Text style={styles.profileInitial}>
+                  {firstName.charAt(0).toUpperCase()}
+                </Text>
+              </Pressable>
             </View>
 
             <Text style={styles.sectionTitle}>Veículos disponíveis</Text>
@@ -106,11 +123,34 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             }
           />
         )}
-        ListFooterComponent={
-          <View style={styles.footer}>
-            <AppButton title="Sair" onPress={signOut} />
-          </View>
-        }
+      />
+
+      <ProfileMenu
+        visible={menuVisible}
+        userName={user?.name}
+        onClose={() => setMenuVisible(false)}
+        onMyVehicles={() => {
+          setMenuVisible(false);
+
+          navigation.navigate("MyVehicles");
+        }}
+        onProposals={() => {
+          setMenuVisible(false);
+
+          Alert.alert(
+            "Propostas recebidas",
+            "Vamos conectar essa tela no próximo passo.",
+          );
+        }}
+        onReviews={() => {
+          setMenuVisible(false);
+
+          Alert.alert(
+            "Avaliações",
+            "Essa funcionalidade será implementada posteriormente.",
+          );
+        }}
+        onSignOut={handleSignOut}
       />
     </View>
   );
@@ -131,6 +171,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
   logo: {
     fontSize: 30,
     fontWeight: "800",
@@ -140,6 +186,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#666",
     marginTop: 4,
+  },
+
+  profileButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#e7f0ff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  profileInitial: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#1677ff",
   },
 
   sectionTitle: {
@@ -165,12 +226,5 @@ const styles = StyleSheet.create({
 
   emptyText: {
     color: "#666",
-  },
-
-  footer: {
-    marginTop: 20,
-  },
-  actions: {
-    marginTop: 18,
   },
 });

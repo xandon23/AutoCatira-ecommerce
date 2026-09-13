@@ -108,10 +108,10 @@ export function ReceivedProposalsScreen({ navigation }: Props) {
               pressed && styles.cardPressed,
             ]}
             onPress={() => {
-              Alert.alert(
-                `${item.brand} ${item.model}`,
-                "No próximo passo vamos abrir as propostas deste veículo.",
-              );
+              navigation.navigate("VehicleProposals", {
+                vehicleId: item.id,
+                vehicleTitle: `${item.brand} ${item.model}`,
+              });
             }}
           >
             {imageUrl ? (

@@ -139,6 +139,11 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
           navigation.navigate("ReceivedProposals");
         }}
+        onNegotiations={() => {
+          setMenuVisible(false);
+
+          navigation.navigate("Negotiations");
+        }}
         onReviews={() => {
           setMenuVisible(false);
 

@@ -47,16 +47,23 @@ export type ProposalStatus =
   | "REJECTED";
 
 export interface IProposal {
-  id?: string;
-  targetVehicleId: string;
-  buyerId: string;
-  offeredVehicleId?: string | null;
+  id: string;
   cashOffer: number;
-  message?: string | null;
   status: ProposalStatus;
+  message?: string | null;
+
+  buyerId: string;
+  targetVehicleId: string;
+  offeredVehicleId?: string | null;
+
+  buyer?: {
+    name?: string;
+    phone?: string;
+    email?: string;
+  };
+
   targetVehicle?: IVehicle;
   offeredVehicle?: IVehicle;
-  buyer?: Partial<IUser>;
 }
 
 export interface IReview {

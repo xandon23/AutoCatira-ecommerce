@@ -77,3 +77,21 @@ export async function updateVehicle(
 export async function deleteVehicle(vehicleId: string): Promise<void> {
   await api.delete(`/vehicles/${vehicleId}`);
 }
+
+interface FinalizeSaleResponse {
+  message: string;
+}
+
+export async function finalizeVehicleSale(
+  vehicleId: string,
+  buyerId: string,
+): Promise<FinalizeSaleResponse> {
+  const response = await api.patch<FinalizeSaleResponse>(
+    `/vehicles/${vehicleId}/sell`,
+    {
+      buyerId,
+    },
+  );
+
+  return response.data;
+}

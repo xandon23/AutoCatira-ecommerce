@@ -197,6 +197,58 @@ export default class ProposalController {
     }
   }
 
+  static async getNegotiations(
+    req: AuthRequest,
+    res: Response,
+  ): Promise<Response> {
+    try {
+      const userId = req.userId as string;
+
+      const proposals = await Proposal.findAll({
+        where: {
+          status: "IN_NEGOTIATION",
+        },
+        include: [
+          {
+            model: Vehicle,
+            as: "targetVehicle",
+            where: {
+              userId,
+            },
+            include: [
+              {
+                model: VehicleImage,
+                as: "images",
+                attributes: ["id", "url"],
+              },
+            ],
+          },
+          {
+            model: User,
+            as: "buyer",
+            attributes: ["name", "phone", "email"],
+          },
+          {
+            model: Vehicle,
+            as: "offeredVehicle",
+            include: [
+              {
+                model: VehicleImage,
+                as: "images",
+                attributes: ["id", "url"],
+              },
+            ],
+          },
+        ],
+        order: [["updatedAt", "DESC"]],
+      });
+
+      return res.status(200).json(proposals);
+    } catch (error) {
+      return ProposalController.handleError(res, error, 500);
+    }
+  }
+
   private static async fetchVehicle(id: string): Promise<Vehicle> {
     const vehicle = await Vehicle.findByPk(id);
     if (!vehicle) throw new Error("Veículo não encontrado.|404");

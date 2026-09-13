@@ -10,6 +10,7 @@ interface ProfileMenuProps {
   onProposals: () => void;
   onReviews: () => void;
   onSignOut: () => void;
+  onNegotiations: () => void;
 }
 
 export function ProfileMenu({
@@ -20,6 +21,7 @@ export function ProfileMenu({
   onProposals,
   onReviews,
   onSignOut,
+  onNegotiations,
 }: ProfileMenuProps) {
   const firstName = userName?.trim().split(" ")[0] || "Usuário";
 
@@ -57,6 +59,8 @@ export function ProfileMenu({
           <MenuItem title="Meus anúncios" onPress={onMyVehicles} />
 
           <MenuItem title="Propostas recebidas" onPress={onProposals} />
+
+          <MenuItem title="Negociações" onPress={onNegotiations} />
 
           <MenuItem title="Avaliações" onPress={onReviews} />
 

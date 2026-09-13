@@ -46,3 +46,9 @@ export async function getReceivedProposalVehicles(): Promise<
 
   return response.data;
 }
+
+export async function getNegotiations(): Promise<IProposal[]> {
+  const response = await api.get<IProposal[]>("/proposals/negotiations");
+
+  return response.data;
+}

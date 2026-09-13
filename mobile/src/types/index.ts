@@ -94,6 +94,7 @@ export interface IProposal {
     email?: string;
   };
 
+  targetVehicle?: IVehicle;
   offeredVehicle?: IVehicle;
 }
 

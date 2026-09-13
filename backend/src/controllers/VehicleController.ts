@@ -141,22 +141,27 @@ export default class VehicleController {
     try {
       const id = req.params.id as string;
       const sellerId = req.userId as string;
+      const buyerId = req.body.buyerId as string;
+
+      if (!buyerId) {
+        throw new Error("Comprador não informado|400");
+      }
       const vehicle = await VehicleController.authorize(id, sellerId);
       if (vehicle.status === "sold") {
         throw new Error("Este veículo já consta como vendido|400");
       }
 
       await vehicle.update(
-        { status: "sold", buyerId: req.body.buyerId },
-        { transaction: t },
+        {
+          status: "sold",
+          buyerId,
+        },
+        {
+          transaction: t,
+        },
       );
 
-      await VehicleController.manageProposals(
-        id,
-        req.body.buyerId,
-        sellerId,
-        t,
-      );
+      await VehicleController.manageProposals(id, buyerId, sellerId, t);
 
       await t.commit();
       return res.status(200).json({ message: "Venda finalizada com sucesso!" });
@@ -223,27 +228,54 @@ export default class VehicleController {
     t: any,
   ): Promise<void> {
     const winningProposal = await Proposal.findOne({
-      where: { targetVehicleId: vId, buyerId: bId },
+      where: {
+        targetVehicleId: vId,
+        buyerId: bId,
+        status: "IN_NEGOTIATION",
+      },
       transaction: t,
     });
 
-    if (winningProposal) {
-      await winningProposal.update({ status: "ACCEPTED" }, { transaction: t });
+    if (!winningProposal) {
+      throw new Error("Não existe negociação ativa com este comprador|400");
+    }
 
-      if (winningProposal.offeredVehicleId) {
-        await Vehicle.update(
-          { status: "sold", buyerId: sellerId },
-          { where: { id: winningProposal.offeredVehicleId }, transaction: t },
-        );
-      }
+    await winningProposal.update(
+      {
+        status: "ACCEPTED",
+      },
+      {
+        transaction: t,
+      },
+    );
+
+    if (winningProposal.offeredVehicleId) {
+      await Vehicle.update(
+        {
+          status: "sold",
+          buyerId: sellerId,
+        },
+        {
+          where: {
+            id: winningProposal.offeredVehicleId,
+          },
+          transaction: t,
+        },
+      );
     }
 
     await Proposal.update(
-      { status: "REJECTED" },
+      {
+        status: "REJECTED",
+      },
       {
         where: {
           targetVehicleId: vId,
-          buyerId: { [Op.ne]: bId },
+
+          id: {
+            [Op.ne]: winningProposal.id,
+          },
+
           status: ["PENDING", "IN_NEGOTIATION"],
         },
         transaction: t,

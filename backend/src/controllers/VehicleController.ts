@@ -69,6 +69,7 @@ export default class VehicleController {
       const vehicles = await Vehicle.findAll({
         where: {
           userId: req.userId,
+          status: "available",
         },
         order: [["createdAt", "DESC"]],
         include: [
@@ -86,6 +87,130 @@ export default class VehicleController {
       });
 
       return res.status(200).json(vehicles);
+    } catch (error) {
+      return VehicleController.handleError(res, error, 500);
+    }
+  }
+
+  static async getSold(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const vehicles = await Vehicle.findAll({
+        where: {
+          userId: req.userId,
+          status: "sold",
+        },
+
+        order: [["updatedAt", "DESC"]],
+
+        include: [
+          {
+            model: User,
+            as: "Buyer",
+            attributes: ["id", "name"],
+          },
+          {
+            model: VehicleImage,
+            as: "images",
+            attributes: ["id", "url"],
+          },
+        ],
+      });
+
+      return res.status(200).json(vehicles);
+    } catch (error) {
+      return VehicleController.handleError(res, error, 500);
+    }
+  }
+
+  static async getSoldById(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const id = req.params.id as string;
+
+      const vehicle = await Vehicle.findOne({
+        where: {
+          id,
+          userId: req.userId,
+          status: "sold",
+        },
+
+        include: [
+          {
+            model: User,
+            as: "Buyer",
+            attributes: ["id", "name", "phone", "email"],
+          },
+          {
+            model: VehicleImage,
+            as: "images",
+            attributes: ["id", "url"],
+          },
+        ],
+      });
+
+      if (!vehicle) {
+        throw new Error("Veículo vendido não encontrado|404");
+      }
+
+      const proposal = await Proposal.findOne({
+        where: {
+          status: "ACCEPTED",
+
+          [Op.or]: [
+            {
+              targetVehicleId: id,
+            },
+            {
+              offeredVehicleId: id,
+            },
+          ],
+        },
+
+        include: [
+          {
+            model: User,
+            as: "buyer",
+            attributes: ["id", "name"],
+          },
+
+          {
+            model: Vehicle,
+            as: "targetVehicle",
+            attributes: [
+              "id",
+              "brand",
+              "model",
+              "manufactureYear",
+              "modelYear",
+              "userId",
+            ],
+          },
+
+          {
+            model: Vehicle,
+            as: "offeredVehicle",
+            attributes: [
+              "id",
+              "brand",
+              "model",
+              "manufactureYear",
+              "modelYear",
+            ],
+          },
+        ],
+      });
+
+      let saleType: "SALE" | "TRADE" | null = null;
+
+      if (proposal) {
+        saleType =
+          String(proposal.targetVehicleId) === String(id) ? "SALE" : "TRADE";
+      }
+
+      return res.status(200).json({
+        vehicle,
+        proposal,
+        saleType,
+      });
     } catch (error) {
       return VehicleController.handleError(res, error, 500);
     }

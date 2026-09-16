@@ -12,6 +12,7 @@ interface ProfileMenuProps {
   onSignOut: () => void;
   onNegotiations: () => void;
   onMyProposals: () => void;
+  onSoldVehicles: () => void;
   isAdmin: boolean;
   onAdmin: () => void;
 }
@@ -26,6 +27,7 @@ export function ProfileMenu({
   onSignOut,
   onNegotiations,
   onMyProposals,
+  onSoldVehicles,
   isAdmin,
   onAdmin,
 }: ProfileMenuProps) {
@@ -63,6 +65,8 @@ export function ProfileMenu({
           <View style={styles.divider} />
 
           <MenuItem title="Meus anúncios" onPress={onMyVehicles} />
+
+          <MenuItem title="Veículos vendidos" onPress={onSoldVehicles} />
 
           <MenuItem title="Propostas recebidas" onPress={onProposals} />
 

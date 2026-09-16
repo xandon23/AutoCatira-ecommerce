@@ -12,6 +12,8 @@ const upload = multer(multerConfig);
 router.get("/", VehicleController.getAll);
 
 router.get("/mine", authMiddleware, VehicleController.getMine);
+router.get("/sold", authMiddleware, VehicleController.getSold);
+router.get("/sold/:id", authMiddleware, VehicleController.getSoldById);
 
 router.get("/:id", VehicleController.getById);
 

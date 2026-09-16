@@ -4,6 +4,7 @@ import {
   IVehicle,
   IVehicleInput,
   VehiclesResponse,
+  ISoldVehicleDetails,
 } from "../types";
 
 export async function getVehicles(
@@ -91,6 +92,22 @@ export async function finalizeVehicleSale(
     {
       buyerId,
     },
+  );
+
+  return response.data;
+}
+
+export async function getSoldVehicles(): Promise<IVehicle[]> {
+  const response = await api.get<IVehicle[]>("/vehicles/sold");
+
+  return response.data;
+}
+
+export async function getSoldVehicleById(
+  vehicleId: string,
+): Promise<ISoldVehicleDetails> {
+  const response = await api.get<ISoldVehicleDetails>(
+    `/vehicles/sold/${vehicleId}`,
   );
 
   return response.data;

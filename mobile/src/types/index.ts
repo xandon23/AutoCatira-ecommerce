@@ -40,6 +40,12 @@ export interface IVehicle {
     email?: string;
     phone?: string;
   };
+  Buyer?: {
+    id?: string;
+    name?: string;
+    phone?: string;
+    email?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -97,6 +103,12 @@ export interface IProposal {
 
   targetVehicle?: IVehicle;
   offeredVehicle?: IVehicle;
+}
+
+export interface ISoldVehicleDetails {
+  vehicle: IVehicle;
+  proposal?: IProposal | null;
+  saleType: "SALE" | "TRADE" | null;
 }
 
 export interface CreateProposalInput {

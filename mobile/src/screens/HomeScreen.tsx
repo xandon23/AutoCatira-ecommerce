@@ -161,6 +161,11 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
             navigation.navigate("MyVehicles");
           }}
+          onSoldVehicles={() => {
+            setMenuVisible(false);
+
+            navigation.navigate("SoldVehicles");
+          }}
           onProposals={() => {
             setMenuVisible(false);
 

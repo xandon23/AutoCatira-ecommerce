@@ -95,17 +95,32 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
               <View>
                 <Text style={styles.logo}>AutoCatira</Text>
 
-                <Text style={styles.welcome}>Olá, {firstName}!</Text>
+                {user ? (
+                  <Text style={styles.welcome}>Olá, {firstName}!</Text>
+                ) : (
+                  <Text style={styles.welcome}>
+                    Encontre seu próximo veículo
+                  </Text>
+                )}
               </View>
 
-              <Pressable
-                style={styles.profileButton}
-                onPress={() => setMenuVisible(true)}
-              >
-                <Text style={styles.profileInitial}>
-                  {firstName.charAt(0).toUpperCase()}
-                </Text>
-              </Pressable>
+              {user ? (
+                <Pressable
+                  style={styles.profileButton}
+                  onPress={() => setMenuVisible(true)}
+                >
+                  <Text style={styles.profileInitial}>
+                    {firstName.charAt(0).toUpperCase()}
+                  </Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  style={styles.loginButton}
+                  onPress={() => navigation.navigate("Login")}
+                >
+                  <Text style={styles.loginButtonText}>Entrar</Text>
+                </Pressable>
+              )}
             </View>
 
             <Text style={styles.sectionTitle}>Veículos disponíveis</Text>
@@ -127,42 +142,43 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           />
         )}
       />
+      {user && (
+        <ProfileMenu
+          visible={menuVisible}
+          userName={user?.name}
+          onClose={() => setMenuVisible(false)}
+          onMyVehicles={() => {
+            setMenuVisible(false);
 
-      <ProfileMenu
-        visible={menuVisible}
-        userName={user?.name}
-        onClose={() => setMenuVisible(false)}
-        onMyVehicles={() => {
-          setMenuVisible(false);
+            navigation.navigate("MyVehicles");
+          }}
+          onProposals={() => {
+            setMenuVisible(false);
 
-          navigation.navigate("MyVehicles");
-        }}
-        onProposals={() => {
-          setMenuVisible(false);
+            navigation.navigate("ReceivedProposals");
+          }}
+          onNegotiations={() => {
+            setMenuVisible(false);
 
-          navigation.navigate("ReceivedProposals");
-        }}
-        onNegotiations={() => {
-          setMenuVisible(false);
+            navigation.navigate("Negotiations");
+          }}
+          onReviews={() => {
+            setMenuVisible(false);
 
-          navigation.navigate("Negotiations");
-        }}
-        onReviews={() => {
-          setMenuVisible(false);
+            Alert.alert(
+              "Avaliações",
+              "Essa funcionalidade será implementada posteriormente.",
+            );
+          }}
+          isAdmin={user?.role === "ADMIN"}
+          onAdmin={() => {
+            setMenuVisible(false);
 
-          Alert.alert(
-            "Avaliações",
-            "Essa funcionalidade será implementada posteriormente.",
-          );
-        }}
-        isAdmin={user?.role === "ADMIN"}
-        onAdmin={() => {
-          setMenuVisible(false);
-
-          navigation.navigate("Admin");
-        }}
-        onSignOut={handleSignOut}
-      />
+            navigation.navigate("Admin");
+          }}
+          onSignOut={handleSignOut}
+        />
+      )}
     </View>
   );
 }
@@ -237,5 +253,18 @@ const styles = StyleSheet.create({
 
   emptyText: {
     color: "#666",
+  },
+
+  loginButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+    borderRadius: 10,
+    backgroundColor: "#1677ff",
+  },
+
+  loginButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

@@ -25,7 +25,7 @@ import { IVehicle } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "VehicleDetail">;
 
-export function VehicleDetailScreen({ route }: Props) {
+export function VehicleDetailScreen({ route, navigation }: Props) {
   const { vehicleId } = route.params;
 
   const { user } = useAuth();
@@ -67,7 +67,7 @@ export function VehicleDetailScreen({ route }: Props) {
 
   useEffect(() => {
     async function loadMyVehicles() {
-      if (!vehicle || isOwner) {
+      if (!user || !vehicle || isOwner) {
         return;
       }
 
@@ -240,8 +240,15 @@ export function VehicleDetailScreen({ route }: Props) {
       {!isOwner && !showProposalForm && (
         <View style={styles.proposalSection}>
           <AppButton
-            title="Fazer proposta"
-            onPress={() => setShowProposalForm(true)}
+            title={user ? "Fazer proposta" : "Entre para fazer uma proposta"}
+            onPress={() => {
+              if (!user) {
+                navigation.navigate("Login");
+                return;
+              }
+
+              setShowProposalForm(true);
+            }}
           />
         </View>
       )}

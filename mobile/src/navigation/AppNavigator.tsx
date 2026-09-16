@@ -6,7 +6,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { HomeScreen } from "../screens/HomeScreen";
 import { LoginScreen } from "../screens/LoginScreen";
 import { VehicleDetailScreen } from "../screens/VehicleDetailScreen";
-import { RootStackParamList } from "./types";
 import { MyVehiclesScreen } from "../screens/MyVehiclesScreen";
 import { CreateVehicleScreen } from "../screens/CreateVehicleScreen";
 import { EditVehicleScreen } from "../screens/EditVehicleScreen";
@@ -14,6 +13,7 @@ import { ReceivedProposalsScreen } from "../screens/ReceivedProposalsScreen";
 import { VehicleProposalsScreen } from "../screens/VehicleProposalsScreen";
 import { NegotiationsScreen } from "../screens/NegotiationsScreen";
 import { AdminScreen } from "../screens/AdminScreen";
+import { RootStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,17 +30,37 @@ export function AppNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        {user ? (
-          <>
-            <Stack.Screen
-              name="Home"
-              component={HomeScreen}
-              options={{
-                headerShown: false,
-              }}
-            />
+      <Stack.Navigator initialRouteName="Home">
+        {/* Rotas públicas */}
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
 
+        <Stack.Screen
+          name="VehicleDetail"
+          component={VehicleDetailScreen}
+          options={{
+            headerShown: true,
+            title: "Detalhes do veículo",
+          }}
+        />
+
+        {!user ? (
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{
+              headerShown: true,
+              title: "Entrar",
+            }}
+          />
+        ) : (
+          <>
+            {/* Rotas privadas */}
             <Stack.Screen
               name="MyVehicles"
               component={MyVehiclesScreen}
@@ -56,15 +76,6 @@ export function AppNavigator() {
               options={{
                 headerShown: true,
                 title: "Novo anúncio",
-              }}
-            />
-
-            <Stack.Screen
-              name="VehicleDetail"
-              component={VehicleDetailScreen}
-              options={{
-                headerShown: true,
-                title: "Detalhes do veículo",
               }}
             />
 
@@ -113,14 +124,6 @@ export function AppNavigator() {
               }}
             />
           </>
-        ) : (
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{
-              headerShown: false,
-            }}
-          />
         )}
       </Stack.Navigator>
     </NavigationContainer>

@@ -5,8 +5,8 @@ import { authMiddleware } from "../middlewares/authMiddleware";
 const router = Router();
 
 router.post("/", UserController.create);
-router.get("/", UserController.getAll);
-router.get("/:id", UserController.getById);
+router.get("/", authMiddleware, UserController.getAll);
+router.get("/:id", authMiddleware, UserController.getById);
 
 router.put("/:id", authMiddleware, UserController.update);
 router.delete("/:id", authMiddleware, UserController.delete);

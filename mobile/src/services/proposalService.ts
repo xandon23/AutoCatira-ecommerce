@@ -61,3 +61,9 @@ export interface UpdateProposalStatusResponse {
     phone: string;
   } | null;
 }
+
+export async function getMyProposals(): Promise<IProposal[]> {
+  const response = await api.get<IProposal[]>("/proposals/mine");
+
+  return response.data;
+}

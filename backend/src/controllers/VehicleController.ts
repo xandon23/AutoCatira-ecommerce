@@ -95,7 +95,7 @@ export default class VehicleController {
     try {
       const id = req.params.id as string;
       const vehicle = await Vehicle.findByPk(id, {
-        include: VehicleController.getIncludes(true),
+        include: VehicleController.getIncludes(false),
       });
 
       if (!vehicle) throw new Error("Veículo não encontrado|404");

@@ -32,28 +32,43 @@ export default class UserController {
     }
   }
 
-  static async getAll(req: Request, res: Response): Promise<Response> {
+  static async getAll(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { page = 1, limit = 10 } = req.query;
+
       const offset = (Number(page) - 1) * Number(limit);
 
       const users = await User.findAll({
-        attributes: { exclude: ["password"] },
+        attributes: ["id", "name"],
         limit: Number(limit),
-        offset: offset,
+        offset,
       });
+
       return res.status(200).json(users);
     } catch (error) {
       return UserController.handleError(res, error, 500);
     }
   }
 
-  static async getById(req: Request, res: Response): Promise<Response> {
+  static async getById(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const user = await User.findByPk(req.params.id as string, {
-        attributes: { exclude: ["password"] },
+      const id = req.params.id as string;
+
+      const canViewPrivateData =
+        String(req.userId) === String(id) || req.userRole === "ADMIN";
+
+      const user = await User.findByPk(id, {
+        attributes: canViewPrivateData
+          ? {
+              exclude: ["password"],
+            }
+          : ["id", "name"],
       });
-      if (!user) throw new Error("Utilizador não encontrado|404");
+
+      if (!user) {
+        throw new Error("Utilizador não encontrado|404");
+      }
+
       return res.status(200).json(user);
     } catch (error) {
       return UserController.handleError(res, error, 500);

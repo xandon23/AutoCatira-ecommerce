@@ -20,6 +20,8 @@ router.get(
   ProposalController.getByVehicle,
 );
 
+router.get("/mine", authMiddleware, ProposalController.getMine);
+
 router.get("/:id", authMiddleware, ProposalController.getById);
 
 router.put("/:id/status", authMiddleware, ProposalController.updateStatus);

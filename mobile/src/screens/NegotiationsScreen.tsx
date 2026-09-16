@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-
 import {
   ActivityIndicator,
   Alert,
@@ -12,26 +11,20 @@ import {
   View,
 } from "react-native";
 
-import axios from "axios";
 import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { RootStackParamList } from "../navigation/types";
 import { getImageUrl } from "../services/api";
 import { getNegotiations } from "../services/proposalService";
-import { finalizeVehicleSale } from "../services/vehicleService";
 import { IProposal } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Negotiations">;
 
 export function NegotiationsScreen({ navigation }: Props) {
   const [proposals, setProposals] = useState<IProposal[]>([]);
-
   const [loading, setLoading] = useState(true);
-
   const [refreshing, setRefreshing] = useState(false);
-
-  const [finalizingId, setFinalizingId] = useState<string | null>(null);
 
   const loadNegotiations = useCallback(async () => {
     try {
@@ -59,53 +52,6 @@ export function NegotiationsScreen({ navigation }: Props) {
     loadNegotiations();
   }
 
-  async function finalizeSale(proposal: IProposal) {
-    try {
-      setFinalizingId(proposal.id);
-
-      const response = await finalizeVehicleSale(
-        proposal.targetVehicleId,
-        proposal.buyerId,
-      );
-
-      setProposals((current) =>
-        current.filter((item) => item.id !== proposal.id),
-      );
-
-      Alert.alert("Venda concluída", response.message);
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        Alert.alert(
-          "Erro",
-          error.response?.data?.error || "Não foi possível finalizar a venda.",
-        );
-
-        return;
-      }
-
-      Alert.alert("Erro", "Ocorreu um erro inesperado.");
-    } finally {
-      setFinalizingId(null);
-    }
-  }
-
-  function confirmSale(proposal: IProposal) {
-    Alert.alert(
-      "Finalizar venda",
-      "Confirme somente quando a negociação estiver concluída. O anúncio será marcado como vendido.",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Finalizar venda",
-          onPress: () => finalizeSale(proposal),
-        },
-      ],
-    );
-  }
-
   if (loading) {
     return (
       <View style={styles.center}>
@@ -130,7 +76,7 @@ export function NegotiationsScreen({ navigation }: Props) {
           <Text style={styles.title}>Negociações</Text>
 
           <Text style={styles.subtitle}>
-            Propostas que você aceitou e estão aguardando conclusão.
+            Acompanhe as propostas aceitas e em andamento.
           </Text>
         </View>
       }
@@ -145,7 +91,6 @@ export function NegotiationsScreen({ navigation }: Props) {
       }
       renderItem={({ item }) => {
         const target = item.targetVehicle;
-
         const offered = item.offeredVehicle;
 
         const targetImage = getImageUrl(target?.images?.[0]?.url);
@@ -155,23 +100,26 @@ export function NegotiationsScreen({ navigation }: Props) {
           currency: "BRL",
         });
 
-        const isFinalizing = finalizingId === item.id;
-
         return (
-          <View style={styles.card}>
+          <Pressable
+            style={styles.card}
+            onPress={() =>
+              navigation.navigate("NegotiationDetail", {
+                proposalId: item.id,
+              })
+            }
+          >
             {targetImage ? (
               <Image
-                source={{
-                  uri: targetImage,
-                }}
-                style={styles.mainImage}
+                source={{ uri: targetImage }}
+                style={styles.image}
                 resizeMode="cover"
               />
             ) : null}
 
             <View style={styles.cardContent}>
               <View style={styles.statusBadge}>
-                <Text style={styles.statusText}>Em negociação</Text>
+                <Text style={styles.statusText}>EM NEGOCIAÇÃO</Text>
               </View>
 
               <Text style={styles.vehicleTitle}>
@@ -184,53 +132,26 @@ export function NegotiationsScreen({ navigation }: Props) {
                 </Text>
               ) : null}
 
-              <View style={styles.divider} />
+              <Text style={styles.label}>Negociação com</Text>
 
-              <Text style={styles.label}>Comprador</Text>
+              <Text style={styles.value}>
+                {item.buyer?.name || "Comprador"}
+              </Text>
 
-              <Text style={styles.value}>{item.buyer?.name || "Usuário"}</Text>
-
-              {item.buyer?.phone ? (
-                <Text style={styles.contact}>{item.buyer.phone}</Text>
-              ) : null}
-
-              <Text style={[styles.label, styles.offerLabel]}>Proposta</Text>
+              <Text style={styles.label}>Oferta</Text>
 
               <Text style={styles.offer}>
                 {cash}
                 {offered ? ` + ${offered.brand} ${offered.model}` : ""}
               </Text>
 
-              {item.message ? (
-                <Text style={styles.message}>“{item.message}”</Text>
-              ) : null}
+              <View style={styles.detailsRow}>
+                <Text style={styles.detailsText}>Ver detalhes</Text>
 
-              {offered ? (
-                <Pressable
-                  style={styles.secondaryButton}
-                  onPress={() =>
-                    navigation.navigate("VehicleDetail", {
-                      vehicleId: offered.id,
-                    })
-                  }
-                >
-                  <Text style={styles.secondaryText}>
-                    Ver veículo oferecido
-                  </Text>
-                </Pressable>
-              ) : null}
-
-              <Pressable
-                disabled={isFinalizing}
-                style={[styles.finalizeButton, isFinalizing && styles.disabled]}
-                onPress={() => confirmSale(item)}
-              >
-                <Text style={styles.finalizeText}>
-                  {isFinalizing ? "Finalizando..." : "Finalizar venda"}
-                </Text>
-              </Pressable>
+                <Text style={styles.arrow}>›</Text>
+              </View>
             </View>
-          </View>
+          </Pressable>
         );
       }}
     />
@@ -273,9 +194,9 @@ const styles = StyleSheet.create({
     borderColor: "#e5e5e5",
   },
 
-  mainImage: {
+  image: {
     width: "100%",
-    height: 180,
+    height: 150,
   },
 
   cardContent: {
@@ -284,17 +205,17 @@ const styles = StyleSheet.create({
 
   statusBadge: {
     alignSelf: "flex-start",
-    paddingHorizontal: 11,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 20,
     backgroundColor: "#e7f0ff",
-    marginBottom: 12,
+    marginBottom: 10,
   },
 
   statusText: {
     color: "#1677ff",
-    fontWeight: "700",
-    fontSize: 12,
+    fontWeight: "800",
+    fontSize: 11,
   },
 
   vehicleTitle: {
@@ -303,82 +224,48 @@ const styles = StyleSheet.create({
   },
 
   year: {
-    marginTop: 4,
+    marginTop: 3,
     color: "#666",
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: "#eee",
-    marginVertical: 16,
+    marginBottom: 16,
   },
 
   label: {
-    fontSize: 13,
-    fontWeight: "700",
+    marginTop: 10,
     color: "#777",
+    fontSize: 12,
+    fontWeight: "700",
   },
 
   value: {
-    marginTop: 4,
-    fontSize: 17,
+    marginTop: 3,
+    fontSize: 16,
     fontWeight: "700",
   },
 
-  contact: {
-    marginTop: 3,
-    color: "#555",
-  },
-
-  offerLabel: {
-    marginTop: 18,
-  },
-
   offer: {
-    marginTop: 5,
-    fontSize: 20,
+    marginTop: 3,
+    fontSize: 18,
     fontWeight: "800",
   },
 
-  message: {
-    marginTop: 12,
-    color: "#555",
-    fontStyle: "italic",
-    lineHeight: 20,
-  },
-
-  secondaryButton: {
-    height: 46,
+  detailsRow: {
     marginTop: 18,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#1677ff",
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
   },
 
-  secondaryText: {
+  detailsText: {
     color: "#1677ff",
     fontWeight: "700",
   },
 
-  finalizeButton: {
-    height: 50,
-    marginTop: 12,
-    borderRadius: 10,
-    backgroundColor: "#1677ff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  finalizeText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 16,
-  },
-
-  disabled: {
-    opacity: 0.5,
+  arrow: {
+    color: "#1677ff",
+    fontSize: 26,
   },
 
   empty: {

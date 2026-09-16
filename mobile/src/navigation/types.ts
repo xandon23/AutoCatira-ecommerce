@@ -20,4 +20,8 @@ export type RootStackParamList = {
   EditVehicle: {
     vehicleId: string;
   };
+
+  NegotiationDetail: {
+    proposalId: string;
+  };
 };

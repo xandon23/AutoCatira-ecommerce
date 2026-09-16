@@ -15,6 +15,7 @@ import { NegotiationsScreen } from "../screens/NegotiationsScreen";
 import { AdminScreen } from "../screens/AdminScreen";
 import { RootStackParamList } from "./types";
 import { RegisterScreen } from "../screens/RegisterScreen";
+import { NegotiationDetailScreen } from "../screens/NegotiationDetailScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -124,6 +125,15 @@ export function AppNavigator() {
               options={{
                 headerShown: true,
                 title: "Negociações",
+              }}
+            />
+
+            <Stack.Screen
+              name="NegotiationDetail"
+              component={NegotiationDetailScreen}
+              options={{
+                headerShown: true,
+                title: "Detalhes da negociação",
               }}
             />
 

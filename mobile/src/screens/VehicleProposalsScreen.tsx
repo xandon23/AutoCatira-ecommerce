@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Linking,
 } from "react-native";
 
 import axios from "axios";
@@ -63,6 +64,32 @@ export function VehicleProposalsScreen({ route, navigation }: Props) {
     loadProposals();
   }
 
+  async function openWhatsApp(phone: string, buyerName: string) {
+    const cleanPhone = phone.replace(/\D/g, "");
+
+    const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+
+    const message =
+      `Olá, ${buyerName}! ` +
+      `Sou o proprietário do ${vehicleTitle} anunciado no AutoCatira. ` +
+      `Aceitei sua proposta e gostaria de conversar sobre a negociação.`;
+
+    const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+
+    const supported = await Linking.canOpenURL(url);
+
+    if (!supported) {
+      Alert.alert(
+        "WhatsApp",
+        "Não foi possível abrir o WhatsApp neste dispositivo.",
+      );
+
+      return;
+    }
+
+    await Linking.openURL(url);
+  }
+
   async function changeProposalStatus(
     proposalId: string,
     status: ProposalStatus,
@@ -70,17 +97,37 @@ export function VehicleProposalsScreen({ route, navigation }: Props) {
     try {
       setProposalActionId(proposalId);
 
-      await updateProposalStatus(proposalId, status);
+      const response = await updateProposalStatus(proposalId, status);
 
       setProposals((current) =>
         current.filter((proposal) => proposal.id !== proposalId),
       );
 
       if (status === "IN_NEGOTIATION") {
-        Alert.alert(
-          "Proposta aceita",
-          "A proposta foi movida para negociação.",
-        );
+        const contact = response.contact;
+
+        if (contact?.phone) {
+          Alert.alert(
+            "Proposta aceita!",
+            `Agora você pode entrar em contato com o comprador.\n\n` +
+              `${contact.name}\n${contact.phone}`,
+            [
+              {
+                text: "Continuar",
+                style: "cancel",
+              },
+              {
+                text: "Conversar pelo WhatsApp",
+                onPress: () => openWhatsApp(contact.phone, contact.name),
+              },
+            ],
+          );
+        } else {
+          Alert.alert(
+            "Proposta aceita",
+            "A proposta foi movida para negociação.",
+          );
+        }
       } else {
         Alert.alert("Proposta recusada", "A proposta foi recusada.");
       }

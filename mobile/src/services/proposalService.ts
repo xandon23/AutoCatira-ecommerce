@@ -29,10 +29,11 @@ export async function getProposalsByVehicle(
 export async function updateProposalStatus(
   proposalId: string,
   status: ProposalStatus,
-): Promise<{ message: string }> {
-  const response = await api.patch<{
-    message: string;
-  }>(`/proposals/${proposalId}/status`, { status });
+): Promise<UpdateProposalStatusResponse> {
+  const response = await api.patch<UpdateProposalStatusResponse>(
+    `/proposals/${proposalId}/status`,
+    { status },
+  );
 
   return response.data;
 }
@@ -51,4 +52,12 @@ export async function getNegotiations(): Promise<IProposal[]> {
   const response = await api.get<IProposal[]>("/proposals/negotiations");
 
   return response.data;
+}
+
+export interface UpdateProposalStatusResponse {
+  message: string;
+  contact?: {
+    name: string;
+    phone: string;
+  } | null;
 }

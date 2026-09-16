@@ -72,6 +72,22 @@ export default class ProposalController {
 
       await proposal.update({ status });
 
+      if (status === "IN_NEGOTIATION") {
+        const buyer = await User.findByPk(proposal.buyerId, {
+          attributes: ["name", "phone"],
+        });
+
+        return res.status(200).json({
+          message: "Status atualizado com sucesso!",
+          contact: buyer
+            ? {
+                name: buyer.name,
+                phone: buyer.phone,
+              }
+            : null,
+        });
+      }
+
       return res
         .status(200)
         .json({ message: "Status atualizado com sucesso!" });
@@ -155,7 +171,7 @@ export default class ProposalController {
           {
             model: User,
             as: "buyer",
-            attributes: ["name", "phone"],
+            attributes: ["name"],
           },
           {
             model: Vehicle,

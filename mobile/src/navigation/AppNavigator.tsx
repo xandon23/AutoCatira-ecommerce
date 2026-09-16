@@ -14,6 +14,7 @@ import { VehicleProposalsScreen } from "../screens/VehicleProposalsScreen";
 import { NegotiationsScreen } from "../screens/NegotiationsScreen";
 import { AdminScreen } from "../screens/AdminScreen";
 import { RootStackParamList } from "./types";
+import { RegisterScreen } from "../screens/RegisterScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -50,14 +51,25 @@ export function AppNavigator() {
         />
 
         {!user ? (
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{
-              headerShown: true,
-              title: "Entrar",
-            }}
-          />
+          <>
+            <Stack.Screen
+              name="Login"
+              component={LoginScreen}
+              options={{
+                headerShown: true,
+                title: "Entrar",
+              }}
+            />
+
+            <Stack.Screen
+              name="Register"
+              component={RegisterScreen}
+              options={{
+                headerShown: true,
+                title: "Criar conta",
+              }}
+            />
+          </>
         ) : (
           <>
             {/* Rotas privadas */}

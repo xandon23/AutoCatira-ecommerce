@@ -114,12 +114,21 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
                   </Text>
                 </Pressable>
               ) : (
-                <Pressable
-                  style={styles.loginButton}
-                  onPress={() => navigation.navigate("Login")}
-                >
-                  <Text style={styles.loginButtonText}>Entrar</Text>
-                </Pressable>
+                <View style={styles.authActions}>
+                  <Pressable
+                    style={styles.loginButton}
+                    onPress={() => navigation.navigate("Login")}
+                  >
+                    <Text style={styles.loginButtonText}>Entrar</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.registerButton}
+                    onPress={() => navigation.navigate("Register")}
+                  >
+                    <Text style={styles.registerButtonText}>Criar conta</Text>
+                  </Pressable>
+                </View>
               )}
             </View>
 
@@ -265,6 +274,24 @@ const styles = StyleSheet.create({
   loginButtonText: {
     color: "#fff",
     fontSize: 15,
+    fontWeight: "700",
+  },
+
+  authActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+
+  registerButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#1677ff",
+  },
+
+  registerButtonText: {
+    color: "#fff",
+    fontSize: 14,
     fontWeight: "700",
   },
 });

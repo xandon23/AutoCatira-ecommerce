@@ -15,7 +15,11 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AppButton } from "../components/AppButton";
 import { AppInput } from "../components/AppInput";
 import { RootStackParamList } from "../navigation/types";
-import { getVehicleById, updateVehicle } from "../services/vehicleService";
+import {
+  deleteVehicle,
+  getVehicleById,
+  updateVehicle,
+} from "../services/vehicleService";
 
 type Props = NativeStackScreenProps<RootStackParamList, "EditVehicle">;
 
@@ -48,6 +52,7 @@ export function EditVehicleScreen({ navigation, route }: Props) {
   const [description, setDescription] = useState("");
   const [features, setFeatures] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function loadVehicle() {
@@ -198,6 +203,54 @@ export function EditVehicleScreen({ navigation, route }: Props) {
     }
   }
 
+  function handleDelete() {
+    Alert.alert(
+      "Excluir anúncio",
+      `Deseja realmente excluir ${brand} ${model}?`,
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Excluir",
+          style: "destructive",
+
+          onPress: async () => {
+            try {
+              setDeleting(true);
+
+              await deleteVehicle(vehicleId);
+
+              Alert.alert(
+                "Anúncio excluído",
+                "O anúncio foi excluído com sucesso.",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => navigation.goBack(),
+                  },
+                ],
+              );
+            } catch (error) {
+              if (axios.isAxiosError(error)) {
+                Alert.alert(
+                  "Erro",
+                  error.response?.data?.error ||
+                    "Não foi possível excluir o anúncio.",
+                );
+              } else {
+                Alert.alert("Erro", "Ocorreu um erro inesperado.");
+              }
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -319,6 +372,18 @@ export function EditVehicleScreen({ navigation, route }: Props) {
             onPress={handleSubmit}
             loading={loading}
           />
+          <Pressable
+            disabled={loading || deleting}
+            style={[
+              styles.deleteButton,
+              (loading || deleting) && styles.disabledButton,
+            ]}
+            onPress={handleDelete}
+          >
+            <Text style={styles.deleteButtonText}>
+              {deleting ? "Excluindo..." : "Excluir anúncio"}
+            </Text>
+          </Pressable>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -405,5 +470,26 @@ const styles = StyleSheet.create({
 
   submit: {
     marginTop: 24,
+  },
+
+  deleteButton: {
+    height: 52,
+    marginTop: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#c62828",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+  },
+
+  deleteButtonText: {
+    color: "#c62828",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  disabledButton: {
+    opacity: 0.5,
   },
 });

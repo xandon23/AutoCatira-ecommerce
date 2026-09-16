@@ -17,7 +17,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 
 import { VehicleCard } from "../components/VehicleCard";
-import { getMyVehicles, deleteVehicle } from "../services/vehicleService";
+import { getMyVehicles } from "../services/vehicleService";
 import { IVehicle } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "MyVehicles">;
@@ -26,7 +26,6 @@ export function MyVehiclesScreen({ navigation }: Props) {
   const [vehicles, setVehicles] = useState<IVehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadVehicles = useCallback(async () => {
     try {
@@ -52,42 +51,6 @@ export function MyVehiclesScreen({ navigation }: Props) {
   function handleRefresh() {
     setRefreshing(true);
     loadVehicles();
-  }
-
-  function handleDelete(vehicle: IVehicle) {
-    Alert.alert(
-      "Excluir anúncio",
-      `Deseja realmente excluir ${vehicle.brand} ${vehicle.model}?`,
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setDeletingId(vehicle.id);
-
-              await deleteVehicle(vehicle.id);
-
-              setVehicles((current) =>
-                current.filter((item) => item.id !== vehicle.id),
-              );
-
-              Alert.alert("Sucesso", "Anúncio excluído com sucesso!");
-            } catch (error) {
-              console.log("Erro ao excluir veículo:", error);
-
-              Alert.alert("Erro", "Não foi possível excluir o anúncio.");
-            } finally {
-              setDeletingId(null);
-            }
-          },
-        },
-      ],
-    );
   }
 
   if (loading) {
@@ -143,19 +106,6 @@ export function MyVehiclesScreen({ navigation }: Props) {
               })
             }
           />
-
-          <Pressable
-            style={[
-              styles.deleteButton,
-              deletingId === item.id && styles.deleteButtonDisabled,
-            ]}
-            disabled={deletingId === item.id}
-            onPress={() => handleDelete(item)}
-          >
-            <Text style={styles.deleteButtonText}>
-              {deletingId === item.id ? "Excluindo..." : "Excluir anúncio"}
-            </Text>
-          </Pressable>
         </View>
       )}
     />
@@ -222,25 +172,5 @@ const styles = StyleSheet.create({
 
   vehicleItem: {
     marginBottom: 18,
-  },
-
-  deleteButton: {
-    marginTop: 8,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#c62828",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  deleteButtonDisabled: {
-    opacity: 0.5,
-  },
-
-  deleteButtonText: {
-    color: "#c62828",
-    fontWeight: "700",
-    fontSize: 14,
   },
 });

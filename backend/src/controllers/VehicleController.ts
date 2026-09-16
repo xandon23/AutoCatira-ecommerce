@@ -236,6 +236,10 @@ export default class VehicleController {
 
       const vehicle = await VehicleController.authorize(id, req.userId);
 
+      if (vehicle.status === "sold") {
+        throw new Error("Veículos vendidos não podem ser alterados|400");
+      }
+
       const data = req.body as IVehicle;
 
       VehicleController.validateVehicleData(data);
@@ -254,6 +258,9 @@ export default class VehicleController {
     try {
       const id = req.params.id as string;
       const vehicle = await VehicleController.authorize(id, req.userId);
+      if (vehicle.status === "sold") {
+        throw new Error("Veículos vendidos não podem ser excluídos|400");
+      }
       await vehicle.destroy();
       return res.status(204).send();
     } catch (error) {

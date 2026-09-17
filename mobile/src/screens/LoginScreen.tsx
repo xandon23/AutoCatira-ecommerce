@@ -2,8 +2,10 @@ import { useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
+  Image,
   Platform,
   StyleSheet,
+  ScrollView,
   Text,
   View,
 } from "react-native";
@@ -58,10 +60,19 @@ export function LoginScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={styles.content}>
-        <Text style={styles.logo}>AutoCatira</Text>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      >
+        <Image
+          source={require("../../assets/autocatira-logo.png")}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
 
         <Text style={styles.subtitle}>Entre na sua conta</Text>
 
@@ -77,12 +88,14 @@ export function LoginScreen() {
         <AppInput
           placeholder="Senha"
           secureTextEntry
+          showPasswordToggle
           value={password}
           onChangeText={setPassword}
+          autoCapitalize="none"
         />
 
         <AppButton title="Entrar" onPress={handleLogin} loading={loading} />
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -94,16 +107,18 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: 24,
     gap: 16,
   },
 
-  logo: {
-    fontSize: 34,
-    fontWeight: "700",
-    textAlign: "center",
+  logoImage: {
+    width: 330,
+    height: 105,
+    alignSelf: "center",
+    marginBottom: -16,
+    marginHorizontal: -12,
   },
 
   subtitle: {

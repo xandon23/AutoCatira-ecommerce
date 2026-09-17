@@ -8,6 +8,10 @@ import {
   StyleSheet,
   Text,
   View,
+  KeyboardAvoidingView,
+  Keyboard,
+  Platform,
+  TouchableWithoutFeedback,
 } from "react-native";
 
 import axios from "axios";
@@ -166,149 +170,166 @@ export function VehicleDetailScreen({ route, navigation }: Props) {
   });
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {vehicle.images?.length ? (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          style={styles.images}
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {vehicle.images.map((image) => (
-            <Image
-              key={image.id}
-              source={{
-                uri: getImageUrl(image.url),
-              }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-          ))}
-        </ScrollView>
-      ) : (
-        <View style={[styles.image, styles.noImage]}>
-          <Text>Sem fotos</Text>
-        </View>
-      )}
-
-      <Text style={styles.title}>
-        {vehicle.brand} {vehicle.model}
-      </Text>
-
-      <Text style={styles.price}>{price}</Text>
-
-      <View style={styles.specs}>
-        <Info
-          label="Ano"
-          value={`${vehicle.manufactureYear}/${vehicle.modelYear}`}
-        />
-
-        <Info
-          label="Quilometragem"
-          value={`${Number(vehicle.mileage).toLocaleString("pt-BR")} km`}
-        />
-
-        <Info label="Motor" value={vehicle.engine} />
-
-        <Info label="Câmbio" value={vehicle.transmission} />
-
-        <Info label="Localização" value={vehicle.location} />
-      </View>
-
-      {vehicle.features?.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Opcionais</Text>
-
-          <Text style={styles.description}>{vehicle.features.join(" • ")}</Text>
-        </View>
-      )}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Descrição</Text>
-
-        <Text style={styles.description}>{vehicle.description}</Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Vendedor</Text>
-
-        <Text style={styles.description}>
-          {vehicle.user?.name || "Vendedor"}
-        </Text>
-      </View>
-
-      {!isOwner && !showProposalForm && (
-        <View style={styles.proposalSection}>
-          <AppButton
-            title={user ? "Fazer proposta" : "Entre para fazer uma proposta"}
-            onPress={() => {
-              if (!user) {
-                navigation.navigate("Login");
-                return;
-              }
-
-              setShowProposalForm(true);
-            }}
-          />
-        </View>
-      )}
-
-      {!isOwner && showProposalForm && (
-        <View style={styles.proposalBox}>
-          <Text style={styles.proposalTitle}>Fazer proposta</Text>
-
-          <Text style={styles.proposalLabel}>Valor em dinheiro (R$)</Text>
-
-          <AppInput
-            placeholder="Ex: 15000"
-            value={cashOffer}
-            onChangeText={setCashOffer}
-            keyboardType="decimal-pad"
-          />
-
-          <Text style={styles.proposalLabel}>Veículo na troca</Text>
-
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={offeredVehicleId}
-              onValueChange={(value) => setOfferedVehicleId(value)}
+          {vehicle.images?.length ? (
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              style={styles.images}
             >
-              <Picker.Item label="Somente dinheiro" value="" />
-
-              {myVehicles.map((item) => (
-                <Picker.Item
-                  key={item.id}
-                  label={`${item.brand} ${item.model} - ${item.manufactureYear}`}
-                  value={item.id}
+              {vehicle.images.map((image) => (
+                <Image
+                  key={image.id}
+                  source={{
+                    uri: getImageUrl(image.url),
+                  }}
+                  style={styles.image}
+                  resizeMode="cover"
                 />
               ))}
-            </Picker>
+            </ScrollView>
+          ) : (
+            <View style={[styles.image, styles.noImage]}>
+              <Text>Sem fotos</Text>
+            </View>
+          )}
+
+          <Text style={styles.title}>
+            {vehicle.brand} {vehicle.model}
+          </Text>
+
+          <Text style={styles.price}>{price}</Text>
+
+          <View style={styles.specs}>
+            <Info
+              label="Ano"
+              value={`${vehicle.manufactureYear}/${vehicle.modelYear}`}
+            />
+
+            <Info
+              label="Quilometragem"
+              value={`${Number(vehicle.mileage).toLocaleString("pt-BR")} km`}
+            />
+
+            <Info label="Motor" value={vehicle.engine} />
+
+            <Info label="Câmbio" value={vehicle.transmission} />
+
+            <Info label="Localização" value={vehicle.location} />
           </View>
 
-          <Text style={styles.proposalLabel}>Mensagem</Text>
+          {vehicle.features?.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Opcionais</Text>
 
-          <AppInput
-            placeholder="Mensagem para o vendedor"
-            value={message}
-            onChangeText={setMessage}
-            multiline
-          />
+              <Text style={styles.description}>
+                {vehicle.features.join(" • ")}
+              </Text>
+            </View>
+          )}
 
-          <AppButton
-            title="Enviar proposta"
-            onPress={handleSendProposal}
-            loading={proposalLoading}
-          />
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Descrição</Text>
 
-          <Pressable
-            style={styles.cancelProposal}
-            onPress={() => setShowProposalForm(false)}
-          >
-            <Text style={styles.cancelProposalText}>Cancelar</Text>
-          </Pressable>
-        </View>
-      )}
-    </ScrollView>
+            <Text style={styles.description}>{vehicle.description}</Text>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Vendedor</Text>
+
+            <Text style={styles.description}>
+              {vehicle.user?.name || "Vendedor"}
+            </Text>
+          </View>
+
+          {!isOwner && !showProposalForm && (
+            <View style={styles.proposalSection}>
+              <AppButton
+                title={
+                  user ? "Fazer proposta" : "Entre para fazer uma proposta"
+                }
+                onPress={() => {
+                  if (!user) {
+                    navigation.navigate("Login");
+                    return;
+                  }
+
+                  setShowProposalForm(true);
+                }}
+              />
+            </View>
+          )}
+
+          {!isOwner && showProposalForm && (
+            <View style={styles.proposalBox}>
+              <Text style={styles.proposalTitle}>Fazer proposta</Text>
+
+              <Text style={styles.proposalLabel}>Valor em dinheiro (R$)</Text>
+
+              <AppInput
+                placeholder="Ex: 15000"
+                value={cashOffer}
+                onChangeText={setCashOffer}
+                keyboardType="decimal-pad"
+              />
+
+              <Text style={styles.proposalLabel}>Veículo na troca</Text>
+
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={offeredVehicleId}
+                  onValueChange={(value) => setOfferedVehicleId(value)}
+                >
+                  <Picker.Item label="Somente dinheiro" value="" />
+
+                  {myVehicles.map((item) => (
+                    <Picker.Item
+                      key={item.id}
+                      label={`${item.brand} ${item.model} - ${item.manufactureYear}`}
+                      value={item.id}
+                    />
+                  ))}
+                </Picker>
+              </View>
+
+              <Text style={styles.proposalLabel}>Mensagem</Text>
+
+              <AppInput
+                placeholder="Mensagem para o vendedor"
+                value={message}
+                onChangeText={setMessage}
+                multiline
+              />
+
+              <AppButton
+                title="Enviar proposta"
+                onPress={handleSendProposal}
+                loading={proposalLoading}
+              />
+
+              <Pressable
+                style={styles.cancelProposal}
+                onPress={() => setShowProposalForm(false)}
+              >
+                <Text style={styles.cancelProposalText}>Cancelar</Text>
+              </Pressable>
+            </View>
+          )}
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -334,7 +355,8 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    paddingBottom: 40,
+    padding: 16,
+    paddingBottom: 120,
   },
 
   center: {

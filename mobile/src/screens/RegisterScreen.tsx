@@ -1,11 +1,15 @@
 import { useState } from "react";
 import {
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
+  Image,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableWithoutFeedback,
 } from "react-native";
 import axios from "axios";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -20,7 +24,6 @@ type Props = NativeStackScreenProps<RootStackParamList, "Register">;
 
 export function RegisterScreen({ navigation }: Props) {
   const { signIn } = useAuth();
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -191,91 +194,108 @@ export function RegisterScreen({ navigation }: Props) {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
     >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={styles.logo}>AutoCatira</Text>
-
-        <Text style={styles.title}>Crie sua conta</Text>
-
-        <Text style={styles.subtitle}>
-          Cadastre-se para anunciar veículos e realizar propostas.
-        </Text>
-
-        <AppInput
-          placeholder="Nome completo"
-          value={name}
-          onChangeText={setName}
-          autoCapitalize="words"
-        />
-
-        <AppInput
-          placeholder="E-mail"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-
-        <AppInput
-          placeholder="Telefone"
-          value={phone}
-          onChangeText={(value) => setPhone(formatPhone(value))}
-          keyboardType="phone-pad"
-          maxLength={15}
-        />
-
-        <AppInput
-          placeholder="Data de nascimento (DD/MM/AAAA)"
-          value={birthDate}
-          onChangeText={(value) => setBirthDate(formatBirthDate(value))}
-          keyboardType="numeric"
-          maxLength={10}
-        />
-
-        <AppInput
-          placeholder="CPF"
-          value={cpf}
-          onChangeText={(value) => setCpf(formatCpf(value))}
-          keyboardType="numeric"
-          maxLength={14}
-        />
-
-        <AppInput
-          placeholder="Senha"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        <Text style={styles.passwordHint}>
-          Mínimo de 8 caracteres, contendo letras e números.
-        </Text>
-
-        <AppInput
-          placeholder="Confirmar senha"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-        />
-
-        <AppButton
-          title="Criar conta"
-          onPress={handleRegister}
-          loading={loading}
-        />
-
-        <Text
-          style={styles.loginLink}
-          onPress={() => navigation.navigate("Login")}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          Já possui uma conta? Entrar
-        </Text>
-      </ScrollView>
+          <Image
+            source={require("../../assets/autocatira-logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+
+          <Text style={styles.title}>Crie sua conta</Text>
+
+          <Text style={styles.subtitle}>
+            Cadastre-se para anunciar veículos e realizar propostas.
+          </Text>
+
+          <AppInput
+            placeholder="Nome completo"
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
+            returnKeyType="next"
+          />
+
+          <AppInput
+            placeholder="E-mail"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            returnKeyType="next"
+          />
+
+          <AppInput
+            placeholder="Telefone"
+            value={phone}
+            onChangeText={(value) => setPhone(formatPhone(value))}
+            keyboardType="phone-pad"
+            maxLength={15}
+          />
+
+          <AppInput
+            placeholder="Data de nascimento (DD/MM/AAAA)"
+            value={birthDate}
+            onChangeText={(value) => setBirthDate(formatBirthDate(value))}
+            keyboardType="numeric"
+            maxLength={10}
+          />
+
+          <AppInput
+            placeholder="CPF"
+            value={cpf}
+            onChangeText={(value) => setCpf(formatCpf(value))}
+            keyboardType="numeric"
+            maxLength={14}
+          />
+
+          <AppInput
+            placeholder="Senha"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            showPasswordToggle
+          />
+
+          <Text style={styles.passwordHint}>
+            Mínimo de 8 caracteres, contendo letras e números.
+          </Text>
+
+          <AppInput
+            placeholder="Confirmar senha"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            showPasswordToggle
+            returnKeyType="done"
+            onSubmitEditing={handleRegister}
+          />
+
+          <Pressable
+            style={[styles.registerButton, loading && styles.buttonDisabled]}
+            disabled={loading}
+            onPress={handleRegister}
+          >
+            <Text style={styles.registerButtonText}>
+              {loading ? "Criando conta..." : "Criar conta"}
+            </Text>
+          </Pressable>
+
+          <Text
+            style={styles.loginLink}
+            onPress={() => navigation.navigate("Login")}
+          >
+            Já possui uma conta? Entrar
+          </Text>
+        </ScrollView>
+      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 }
@@ -288,36 +308,60 @@ const styles = StyleSheet.create({
 
   content: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    gap: 14,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 120,
+    gap: 12,
   },
 
-  logo: {
-    fontSize: 32,
-    fontWeight: "800",
-    textAlign: "center",
-    marginTop: 10,
+  logoImage: {
+    width: 330,
+    height: 105,
+    alignSelf: "center",
+    marginBottom: -16,
+    marginHorizontal: -12,
   },
 
   title: {
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: "700",
     textAlign: "center",
-    marginTop: 8,
+    marginTop: 2,
   },
 
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
+    lineHeight: 20,
     color: "#666",
     textAlign: "center",
-    marginBottom: 12,
+    marginBottom: 8,
+    paddingHorizontal: 12,
   },
 
   passwordHint: {
     fontSize: 12,
-    color: "#666",
-    marginTop: -6,
+    color: "#777",
+    marginTop: -5,
+    marginBottom: 1,
+  },
+
+  registerButton: {
+    height: 52,
+    backgroundColor: "#1677ff",
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 5,
+  },
+
+  registerButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+
+  buttonDisabled: {
+    opacity: 0.6,
   },
 
   loginLink: {
@@ -325,6 +369,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#1677ff",
     textAlign: "center",
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
 });

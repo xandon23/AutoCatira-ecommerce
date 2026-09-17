@@ -77,7 +77,7 @@ export function MyVehiclesScreen({ navigation }: Props) {
           <Text style={styles.title}>Meus anúncios</Text>
 
           <Text style={styles.subtitle}>
-            {vehicles.length} veículo(s) cadastrado(s)
+            {vehicles.length} veículo(s) anunciado(s).
           </Text>
           <View style={styles.newVehicle}>
             <AppButton
@@ -89,11 +89,11 @@ export function MyVehiclesScreen({ navigation }: Props) {
       }
       ListEmptyComponent={
         <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>Você ainda não possui anúncios.</Text>
-
-          <Text style={styles.emptyText}>
-            Cadastre seu primeiro veículo no AutoCatira.
+          <Text style={styles.emptyTitle}>
+            Você não possui anúncios ativos.
           </Text>
+
+          <Text style={styles.emptyText}>Cadastre agora mesmo.</Text>
         </View>
       }
       renderItem={({ item }) => (

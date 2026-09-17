@@ -3,14 +3,16 @@ import axios from "axios";
 import { useState } from "react";
 import {
   Alert,
+  Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableWithoutFeedback,
   View,
-  Image,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -184,140 +186,148 @@ export function CreateVehicleScreen({ navigation }: Props) {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
     >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={styles.sectionTitle}>Fotos do veículo</Text>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.sectionTitle}>Fotos do veículo</Text>
 
-        <Pressable style={styles.imageButton} onPress={handleSelectImage}>
-          <Text style={styles.imageButtonText}>+ Selecionar foto</Text>
-        </Pressable>
+          <Pressable style={styles.imageButton} onPress={handleSelectImage}>
+            <Text style={styles.imageButtonText}>+ Selecionar foto</Text>
+          </Pressable>
 
-        {selectedImage && (
-          <Image
-            source={{ uri: selectedImage.uri }}
-            style={styles.preview}
-            resizeMode="cover"
+          {selectedImage && (
+            <Image
+              source={{ uri: selectedImage.uri }}
+              style={styles.preview}
+              resizeMode="cover"
+            />
+          )}
+
+          <Text style={styles.sectionTitle}>Identificação</Text>
+
+          <AppInput placeholder="Marca" value={brand} onChangeText={setBrand} />
+
+          <AppInput
+            placeholder="Modelo"
+            value={model}
+            onChangeText={setModel}
           />
-        )}
 
-        <Text style={styles.sectionTitle}>Identificação</Text>
+          <AppInput
+            placeholder="Ano de fabricação"
+            value={manufactureYear}
+            onChangeText={setManufactureYear}
+            keyboardType="numeric"
+          />
 
-        <AppInput placeholder="Marca" value={brand} onChangeText={setBrand} />
+          <AppInput
+            placeholder="Ano do modelo"
+            value={modelYear}
+            onChangeText={setModelYear}
+            keyboardType="numeric"
+          />
 
-        <AppInput placeholder="Modelo" value={model} onChangeText={setModel} />
+          <Text style={styles.sectionTitle}>Mecânica</Text>
 
-        <AppInput
-          placeholder="Ano de fabricação"
-          value={manufactureYear}
-          onChangeText={setManufactureYear}
-          keyboardType="numeric"
-        />
+          <AppInput
+            placeholder="Motor (ex: 1.0)"
+            value={engine}
+            onChangeText={setEngine}
+          />
 
-        <AppInput
-          placeholder="Ano do modelo"
-          value={modelYear}
-          onChangeText={setModelYear}
-          keyboardType="numeric"
-        />
+          <Text style={styles.label}>Câmbio</Text>
 
-        <Text style={styles.sectionTitle}>Mecânica</Text>
-
-        <AppInput
-          placeholder="Motor (ex: 1.0)"
-          value={engine}
-          onChangeText={setEngine}
-        />
-
-        <Text style={styles.label}>Câmbio</Text>
-
-        <View style={styles.options}>
-          {["Manual", "Automático", "CVT"].map((item) => (
-            <Pressable
-              key={item}
-              style={[
-                styles.option,
-                transmission === item && styles.optionSelected,
-              ]}
-              onPress={() => setTransmission(item)}
-            >
-              <Text
-                style={[
-                  styles.optionText,
-                  transmission === item && styles.optionTextSelected,
-                ]}
-              >
-                {item}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        <AppInput
-          placeholder="Quilometragem"
-          value={mileage}
-          onChangeText={setMileage}
-          keyboardType="numeric"
-        />
-
-        <AppInput
-          placeholder="Preço (ex: 50000)"
-          value={price}
-          onChangeText={setPrice}
-          keyboardType="decimal-pad"
-        />
-
-        <Text style={styles.sectionTitle}>Informações do anúncio</Text>
-
-        <AppInput
-          placeholder="Cidade/Estado"
-          value={location}
-          onChangeText={setLocation}
-        />
-
-        <AppInput
-          placeholder="Descrição do veículo"
-          value={description}
-          onChangeText={setDescription}
-          multiline
-        />
-
-        <Text style={styles.sectionTitle}>Opcionais</Text>
-
-        <View style={styles.features}>
-          {FEATURES.map((feature) => {
-            const selected = features.includes(feature);
-
-            return (
+          <View style={styles.options}>
+            {["Manual", "Automático", "CVT"].map((item) => (
               <Pressable
-                key={feature}
-                style={[styles.feature, selected && styles.featureSelected]}
-                onPress={() => toggleFeature(feature)}
+                key={item}
+                style={[
+                  styles.option,
+                  transmission === item && styles.optionSelected,
+                ]}
+                onPress={() => setTransmission(item)}
               >
                 <Text
                   style={[
-                    styles.featureText,
-                    selected && styles.featureTextSelected,
+                    styles.optionText,
+                    transmission === item && styles.optionTextSelected,
                   ]}
                 >
-                  {feature}
+                  {item}
                 </Text>
               </Pressable>
-            );
-          })}
-        </View>
+            ))}
+          </View>
 
-        <View style={styles.submit}>
-          <AppButton
-            title="Publicar veículo"
-            onPress={handleSubmit}
-            loading={loading}
+          <AppInput
+            placeholder="Quilometragem"
+            value={mileage}
+            onChangeText={setMileage}
+            keyboardType="numeric"
           />
-        </View>
-      </ScrollView>
+
+          <AppInput
+            placeholder="Preço (ex: 50000)"
+            value={price}
+            onChangeText={setPrice}
+            keyboardType="decimal-pad"
+          />
+
+          <Text style={styles.sectionTitle}>Informações do anúncio</Text>
+
+          <AppInput
+            placeholder="Cidade/Estado"
+            value={location}
+            onChangeText={setLocation}
+          />
+
+          <AppInput
+            placeholder="Descrição do veículo"
+            value={description}
+            onChangeText={setDescription}
+            multiline
+          />
+
+          <Text style={styles.sectionTitle}>Opcionais</Text>
+
+          <View style={styles.features}>
+            {FEATURES.map((feature) => {
+              const selected = features.includes(feature);
+
+              return (
+                <Pressable
+                  key={feature}
+                  style={[styles.feature, selected && styles.featureSelected]}
+                  onPress={() => toggleFeature(feature)}
+                >
+                  <Text
+                    style={[
+                      styles.featureText,
+                      selected && styles.featureTextSelected,
+                    ]}
+                  >
+                    {feature}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <View style={styles.submit}>
+            <AppButton
+              title="Publicar veículo"
+              onPress={handleSubmit}
+              loading={loading}
+            />
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 }
@@ -330,7 +340,7 @@ const styles = StyleSheet.create({
 
   content: {
     padding: 18,
-    paddingBottom: 50,
+    paddingBottom: 120,
     gap: 14,
   },
 

@@ -1,4 +1,12 @@
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  Image,
+} from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -40,12 +48,14 @@ export function ProfileMenu({
       visible={visible}
       transparent
       animationType="fade"
+      statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={onClose}
     >
       <View style={styles.container}>
         <Pressable style={styles.overlay} onPress={onClose} />
 
-        <SafeAreaView style={styles.menu}>
+        <SafeAreaView style={styles.menu} edges={["top"]}>
           <View style={styles.header}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{initial}</Text>
@@ -64,31 +74,51 @@ export function ProfileMenu({
 
           <View style={styles.divider} />
 
-          <MenuItem title="Meus anúncios" onPress={onMyVehicles} />
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.sectionLabel}>VEÍCULOS</Text>
 
-          <MenuItem title="Veículos vendidos" onPress={onSoldVehicles} />
+            <MenuItem title="Meus anúncios" onPress={onMyVehicles} />
 
-          <MenuItem title="Propostas recebidas" onPress={onProposals} />
+            <MenuItem title="Veículos vendidos" onPress={onSoldVehicles} />
 
-          <MenuItem title="Minhas propostas" onPress={onMyProposals} />
+            <View style={styles.sectionDivider} />
 
-          <MenuItem title="Negociações" onPress={onNegotiations} />
+            <Text style={styles.sectionLabel}>NEGOCIAÇÕES</Text>
 
-          <MenuItem title="Avaliações" onPress={onReviews} />
+            <MenuItem title="Propostas recebidas" onPress={onProposals} />
 
-          {isAdmin && <MenuItem title="Administração" onPress={onAdmin} />}
+            <MenuItem title="Minhas propostas" onPress={onMyProposals} />
 
-          <View style={styles.divider} />
+            <MenuItem title="Negociações" onPress={onNegotiations} />
 
-          <MenuItem title="Sair" onPress={onSignOut} danger />
+            <View style={styles.sectionDivider} />
 
-          <View style={styles.brand}>
-            <Text style={styles.brandName}>AutoCatira</Text>
+            <Text style={styles.sectionLabel}>CONTA</Text>
 
-            <Text style={styles.brandSubtitle}>
-              Troque seu carro. Vá mais longe.
-            </Text>
-          </View>
+            <MenuItem title="Avaliações" onPress={onReviews} />
+
+            {isAdmin && <MenuItem title="Administração" onPress={onAdmin} />}
+
+            <View style={styles.sectionDivider} />
+
+            <MenuItem title="Sair" onPress={onSignOut} danger />
+
+            <View style={styles.brand}>
+              <Image
+                source={require("../../assets/autocatira-logo.png")}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+
+              <Text style={styles.brandSubtitle}>
+                Troque seu carro. Vá mais longe.
+              </Text>
+            </View>
+          </ScrollView>
         </SafeAreaView>
       </View>
     </Modal>
@@ -140,7 +170,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 22,
+    paddingVertical: 18,
   },
 
   avatar: {
@@ -191,30 +221,31 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: "#e6e6e6",
-    marginVertical: 10,
+    marginBottom: 12,
   },
 
   menuItem: {
-    minHeight: 60,
+    minHeight: 52,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 6,
+    borderRadius: 10,
   },
 
   menuItemPressed: {
-    opacity: 0.55,
+    backgroundColor: "#f2f4f7",
   },
 
   menuItemText: {
     flex: 1,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
     color: "#222",
   },
 
   arrow: {
-    fontSize: 28,
-    color: "#888",
+    fontSize: 24,
+    color: "#aaa",
   },
 
   dangerText: {
@@ -222,24 +253,47 @@ const styles = StyleSheet.create({
   },
 
   brand: {
-    marginTop: "auto",
-    marginBottom: 28,
-    padding: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     borderRadius: 14,
-    backgroundColor: "#f7f9fc",
+    backgroundColor: "#fff",
     alignItems: "center",
   },
 
-  brandName: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#1677ff",
-  },
-
   brandSubtitle: {
-    marginTop: 5,
+    marginTop: 2,
     fontSize: 12,
     color: "#888",
     textAlign: "center",
+  },
+
+  logoImage: {
+    width: 220,
+    height: 70,
+    marginBottom: -16,
+  },
+
+  scroll: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    paddingBottom: 12,
+  },
+
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#999",
+    letterSpacing: 0.8,
+    marginTop: 8,
+    marginBottom: 4,
+    paddingHorizontal: 6,
+  },
+
+  sectionDivider: {
+    height: 1,
+    backgroundColor: "#eeeeee",
+    marginVertical: 8,
   },
 });

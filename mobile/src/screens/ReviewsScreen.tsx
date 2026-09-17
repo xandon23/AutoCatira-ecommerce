@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,6 +12,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 
@@ -174,214 +176,224 @@ export function ReviewsScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
     >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>Avaliações</Text>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <Text style={styles.title}>Avaliações</Text>
 
-          <Text style={styles.subtitle}>
-            Avalie suas negociações e acompanhe sua reputação no AutoCatira.
-          </Text>
-        </View>
-
-        <View style={styles.tabs}>
-          <Pressable
-            style={[styles.tab, tab === "PENDING" && styles.tabSelected]}
-            onPress={() => setTab("PENDING")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                tab === "PENDING" && styles.tabTextSelected,
-              ]}
-            >
-              Pendentes ({pending.length})
+            <Text style={styles.subtitle}>
+              Avalie suas negociações e acompanhe sua reputação no AutoCatira.
             </Text>
-          </Pressable>
+          </View>
 
-          <Pressable
-            style={[styles.tab, tab === "RECEIVED" && styles.tabSelected]}
-            onPress={() => setTab("RECEIVED")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                tab === "RECEIVED" && styles.tabTextSelected,
-              ]}
+          <View style={styles.tabs}>
+            <Pressable
+              style={[styles.tab, tab === "PENDING" && styles.tabSelected]}
+              onPress={() => setTab("PENDING")}
             >
-              Recebidas ({received.length})
-            </Text>
-          </Pressable>
-        </View>
+              <Text
+                style={[
+                  styles.tabText,
+                  tab === "PENDING" && styles.tabTextSelected,
+                ]}
+              >
+                Pendentes ({pending.length})
+              </Text>
+            </Pressable>
 
-        {tab === "PENDING" ? (
-          <>
-            {!pending.length ? (
-              <View style={styles.empty}>
-                <Text style={styles.emptyTitle}>
-                  Nenhuma avaliação pendente
-                </Text>
+            <Pressable
+              style={[styles.tab, tab === "RECEIVED" && styles.tabSelected]}
+              onPress={() => setTab("RECEIVED")}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  tab === "RECEIVED" && styles.tabTextSelected,
+                ]}
+              >
+                Recebidas ({received.length})
+              </Text>
+            </Pressable>
+          </View>
 
-                <Text style={styles.emptyText}>
-                  Quando uma negociação for concluída, você poderá avaliar a
-                  outra pessoa aqui.
-                </Text>
-              </View>
-            ) : (
-              pending.map((item) => {
-                const imageUrl = getImageUrl(
-                  item.targetVehicle?.images?.[0]?.url,
-                );
+          {tab === "PENDING" ? (
+            <>
+              {!pending.length ? (
+                <View style={styles.empty}>
+                  <Text style={styles.emptyTitle}>
+                    Nenhuma avaliação pendente
+                  </Text>
 
-                const rating = ratings[item.proposalId] || 0;
+                  <Text style={styles.emptyText}>
+                    Quando uma negociação for concluída, você poderá avaliar a
+                    outra pessoa aqui.
+                  </Text>
+                </View>
+              ) : (
+                pending.map((item) => {
+                  const imageUrl = getImageUrl(
+                    item.targetVehicle?.images?.[0]?.url,
+                  );
 
-                const comment = comments[item.proposalId] || "";
+                  const rating = ratings[item.proposalId] || 0;
 
-                const sending = sendingId === item.proposalId;
+                  const comment = comments[item.proposalId] || "";
 
-                return (
-                  <View key={item.proposalId} style={styles.card}>
-                    {imageUrl ? (
-                      <Image
-                        source={{
-                          uri: imageUrl,
-                        }}
-                        style={styles.vehicleImage}
-                      />
-                    ) : null}
+                  const sending = sendingId === item.proposalId;
 
-                    <Text style={styles.vehicleTitle}>
-                      {item.targetVehicle.brand} {item.targetVehicle.model}{" "}
-                      {item.targetVehicle.modelYear}
-                    </Text>
+                  return (
+                    <View key={item.proposalId} style={styles.card}>
+                      {imageUrl ? (
+                        <Image
+                          source={{
+                            uri: imageUrl,
+                          }}
+                          style={styles.vehicleImage}
+                        />
+                      ) : null}
 
-                    <Text style={styles.label}>Avaliar</Text>
+                      <Text style={styles.vehicleTitle}>
+                        {item.targetVehicle.brand} {item.targetVehicle.model}{" "}
+                        {item.targetVehicle.modelYear}
+                      </Text>
 
-                    <Text style={styles.personName}>
-                      {item.reviewedUser.name}
-                    </Text>
+                      <Text style={styles.label}>Avaliar</Text>
 
-                    <Text style={styles.helper}>
-                      {item.role === "BUYER"
-                        ? "Você participou como comprador."
-                        : "Você participou como vendedor."}
-                    </Text>
+                      <Text style={styles.personName}>
+                        {item.reviewedUser.name}
+                      </Text>
 
-                    <Text style={styles.ratingLabel}>
-                      Como foi a negociação?
-                    </Text>
+                      <Text style={styles.helper}>
+                        {item.role === "BUYER"
+                          ? "Você participou como comprador."
+                          : "Você participou como vendedor."}
+                      </Text>
 
-                    {renderStars(rating, (value) =>
-                      setRatings((current) => ({
-                        ...current,
+                      <Text style={styles.ratingLabel}>
+                        Como foi a negociação?
+                      </Text>
 
-                        [item.proposalId]: value,
-                      })),
-                    )}
-
-                    <TextInput
-                      style={styles.commentInput}
-                      placeholder="Conte como foi sua experiência (opcional)"
-                      placeholderTextColor="#999"
-                      multiline
-                      maxLength={500}
-                      value={comment}
-                      onChangeText={(value) =>
-                        setComments((current) => ({
+                      {renderStars(rating, (value) =>
+                        setRatings((current) => ({
                           ...current,
 
                           [item.proposalId]: value,
-                        }))
-                      }
-                    />
+                        })),
+                      )}
 
-                    <Text style={styles.counter}>{comment.length}/500</Text>
+                      <TextInput
+                        style={styles.commentInput}
+                        placeholder="Conte como foi sua experiência (opcional)"
+                        placeholderTextColor="#999"
+                        multiline
+                        maxLength={500}
+                        value={comment}
+                        onChangeText={(value) =>
+                          setComments((current) => ({
+                            ...current,
 
-                    <Pressable
-                      disabled={sending}
-                      style={[styles.submitButton, sending && styles.disabled]}
-                      onPress={() => handleSubmit(item)}
-                    >
-                      <Text style={styles.submitButtonText}>
-                        {sending ? "Enviando..." : "Enviar avaliação"}
-                      </Text>
-                    </Pressable>
-                  </View>
-                );
-              })
-            )}
-          </>
-        ) : (
-          <>
-            <View style={styles.reputationCard}>
-              <Text style={styles.reputationLabel}>Sua reputação</Text>
+                            [item.proposalId]: value,
+                          }))
+                        }
+                      />
 
-              <Text style={styles.average}>
-                {received.length ? average.toFixed(1) : "—"}
-              </Text>
+                      <Text style={styles.counter}>{comment.length}/500</Text>
 
-              {renderStars(Math.round(average))}
+                      <Pressable
+                        disabled={sending}
+                        style={[
+                          styles.submitButton,
+                          sending && styles.disabled,
+                        ]}
+                        onPress={() => handleSubmit(item)}
+                      >
+                        <Text style={styles.submitButtonText}>
+                          {sending ? "Enviando..." : "Enviar avaliação"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  );
+                })
+              )}
+            </>
+          ) : (
+            <>
+              <View style={styles.reputationCard}>
+                <Text style={styles.reputationLabel}>Sua reputação</Text>
 
-              <Text style={styles.reviewCount}>
-                {received.length}{" "}
-                {received.length === 1
-                  ? "avaliação recebida"
-                  : "avaliações recebidas"}
-              </Text>
-            </View>
-
-            {!received.length ? (
-              <View style={styles.empty}>
-                <Text style={styles.emptyTitle}>
-                  Nenhuma avaliação recebida
+                <Text style={styles.average}>
+                  {received.length ? average.toFixed(1) : "—"}
                 </Text>
 
-                <Text style={styles.emptyText}>
-                  Suas avaliações aparecerão aqui após negociações concluídas.
+                {renderStars(Math.round(average))}
+
+                <Text style={styles.reviewCount}>
+                  {received.length}{" "}
+                  {received.length === 1
+                    ? "avaliação recebida"
+                    : "avaliações recebidas"}
                 </Text>
               </View>
-            ) : (
-              received.map((review) => {
-                const vehicle = review.proposal?.targetVehicle;
 
-                return (
-                  <View key={review.id} style={styles.card}>
-                    <View style={styles.reviewHeader}>
-                      <View>
-                        <Text style={styles.reviewerName}>
-                          {review.reviewer.name}
-                        </Text>
+              {!received.length ? (
+                <View style={styles.empty}>
+                  <Text style={styles.emptyTitle}>
+                    Nenhuma avaliação recebida
+                  </Text>
 
-                        {vehicle ? (
-                          <Text style={styles.reviewVehicle}>
-                            {vehicle.brand} {vehicle.model} {vehicle.modelYear}
+                  <Text style={styles.emptyText}>
+                    Suas avaliações aparecerão aqui após negociações concluídas.
+                  </Text>
+                </View>
+              ) : (
+                received.map((review) => {
+                  const vehicle = review.proposal?.targetVehicle;
+
+                  return (
+                    <View key={review.id} style={styles.card}>
+                      <View style={styles.reviewHeader}>
+                        <View>
+                          <Text style={styles.reviewerName}>
+                            {review.reviewer.name}
                           </Text>
-                        ) : null}
+
+                          {vehicle ? (
+                            <Text style={styles.reviewVehicle}>
+                              {vehicle.brand} {vehicle.model}{" "}
+                              {vehicle.modelYear}
+                            </Text>
+                          ) : null}
+                        </View>
+
+                        <Text style={styles.ratingNumber}>
+                          {review.rating}/5
+                        </Text>
                       </View>
 
-                      <Text style={styles.ratingNumber}>{review.rating}/5</Text>
+                      {renderStars(Number(review.rating))}
+
+                      {review.comment ? (
+                        <Text style={styles.comment}>“{review.comment}”</Text>
+                      ) : (
+                        <Text style={styles.noComment}>
+                          Avaliação sem comentário.
+                        </Text>
+                      )}
                     </View>
-
-                    {renderStars(Number(review.rating))}
-
-                    {review.comment ? (
-                      <Text style={styles.comment}>“{review.comment}”</Text>
-                    ) : (
-                      <Text style={styles.noComment}>
-                        Avaliação sem comentário.
-                      </Text>
-                    )}
-                  </View>
-                );
-              })
-            )}
-          </>
-        )}
-      </ScrollView>
+                  );
+                })
+              )}
+            </>
+          )}
+        </ScrollView>
+      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 }
@@ -394,7 +406,7 @@ const styles = StyleSheet.create({
 
   content: {
     padding: 16,
-    paddingBottom: 50,
+    paddingBottom: 120,
   },
 
   header: {

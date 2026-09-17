@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   FlatList,
   Pressable,
   RefreshControl,
@@ -20,6 +21,7 @@ import { RootStackParamList } from "../navigation/types";
 import { getVehicles } from "../services/vehicleService";
 import { IVehicle } from "../types";
 import { useFocusEffect } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface HomeScreenProps {
   navigation: NativeStackNavigationProp<RootStackParamList, "Home">;
@@ -81,7 +83,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const firstName = user?.name?.trim().split(" ")[0] || "Usuário";
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <FlatList
         data={vehicles}
         keyExtractor={(item) => item.id}
@@ -91,20 +93,18 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         }
         ListHeaderComponent={
           <View style={styles.header}>
-            <View style={styles.topBar}>
-              <View>
-                <Text style={styles.logo}>AutoCatira</Text>
+            {user ? (
+              <View style={styles.topBar}>
+                <View>
+                  <Image
+                    source={require("../../assets/autocatira-logo.png")}
+                    style={styles.logoImage}
+                    resizeMode="contain"
+                  />
 
-                {user ? (
                   <Text style={styles.welcome}>Olá, {firstName}!</Text>
-                ) : (
-                  <Text style={styles.welcome}>
-                    Encontre seu próximo veículo
-                  </Text>
-                )}
-              </View>
+                </View>
 
-              {user ? (
                 <Pressable
                   style={styles.profileButton}
                   onPress={() => setMenuVisible(true)}
@@ -113,7 +113,19 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
                     {firstName.charAt(0).toUpperCase()}
                   </Text>
                 </Pressable>
-              ) : (
+              </View>
+            ) : (
+              <View style={styles.guestHeader}>
+                <Image
+                  source={require("../../assets/autocatira-logo.png")}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
+
+                <Text style={styles.subtitle}>
+                  Encontre seu próximo veículo
+                </Text>
+
                 <View style={styles.authActions}>
                   <Pressable
                     style={styles.loginButton}
@@ -129,8 +141,8 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
                     <Text style={styles.registerButtonText}>Criar conta</Text>
                   </Pressable>
                 </View>
-              )}
-            </View>
+              </View>
+            )}
 
             <Text style={styles.sectionTitle}>Veículos disponíveis</Text>
           </View>
@@ -195,7 +207,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           onSignOut={handleSignOut}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -220,9 +232,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
 
-  logo: {
-    fontSize: 30,
-    fontWeight: "800",
+  logoImage: {
+    width: 220,
+    height: 70,
+    alignSelf: "flex-start",
+    marginHorizontal: -12,
+    marginBottom: -16,
   },
 
   welcome: {
@@ -272,33 +287,50 @@ const styles = StyleSheet.create({
   },
 
   loginButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 11,
+    flex: 1,
+    height: 48,
     borderRadius: 10,
-    backgroundColor: "#1677ff",
+    borderWidth: 1.5,
+    borderColor: "#1677ff",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
   },
 
   loginButtonText: {
-    color: "#fff",
-    fontSize: 15,
+    color: "#1677ff",
     fontWeight: "700",
+    fontSize: 15,
   },
 
   authActions: {
     flexDirection: "row",
-    gap: 8,
+    gap: 10,
+    marginTop: 18,
   },
 
   registerButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    flex: 1,
+    height: 48,
     borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "#1677ff",
   },
 
   registerButtonText: {
     color: "#fff",
-    fontSize: 14,
     fontWeight: "700",
+    fontSize: 15,
+  },
+
+  subtitle: {
+    marginTop: 4,
+    fontSize: 16,
+    color: "#666",
+  },
+
+  guestHeader: {
+    width: "100%",
   },
 });

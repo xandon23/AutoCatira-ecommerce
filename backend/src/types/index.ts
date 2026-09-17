@@ -75,3 +75,9 @@ export interface IReview {
   createdAt?: Date;
   reviewer?: Partial<IUser>;
 }
+
+export interface ICreateReview {
+  proposalId: string;
+  rating: number;
+  comment?: string;
+}

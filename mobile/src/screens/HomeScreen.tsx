@@ -184,10 +184,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           onReviews={() => {
             setMenuVisible(false);
 
-            Alert.alert(
-              "Avaliações",
-              "Essa funcionalidade será implementada posteriormente.",
-            );
+            navigation.navigate("Reviews");
           }}
           isAdmin={user?.role === "ADMIN"}
           onAdmin={() => {

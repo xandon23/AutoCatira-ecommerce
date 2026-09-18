@@ -26,7 +26,18 @@ export default class UserController {
         cpf: cpf.replace(/\D/g, ""),
       });
 
-      return res.status(201).json(user);
+      return res.status(201).json({
+        message: "Usuário criado com sucesso",
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          birthDate: user.birthDate,
+          cpf: user.cpf,
+          role: user.role,
+        },
+      });
     } catch (error) {
       return UserController.handleError(res, error, 400);
     }

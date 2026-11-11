@@ -44,7 +44,7 @@ export default class VehicleController {
           {
             model: User,
             as: "user",
-            attributes: ["name", "email"],
+            attributes: ["name"],
           },
           {
             model: VehicleImage,
@@ -396,19 +396,28 @@ export default class VehicleController {
       );
     }
 
+    const soldVehicleIds = [vId];
+
+    if (winningProposal.offeredVehicleId) {
+      soldVehicleIds.push(winningProposal.offeredVehicleId);
+    }
+
     await Proposal.update(
       {
         status: "REJECTED",
       },
       {
         where: {
-          targetVehicleId: vId,
-
           id: {
             [Op.ne]: winningProposal.id,
           },
 
           status: ["PENDING", "IN_NEGOTIATION"],
+
+          [Op.or]: [
+            { targetVehicleId: soldVehicleIds },
+            { offeredVehicleId: soldVehicleIds },
+          ],
         },
         transaction: t,
       },
@@ -416,9 +425,7 @@ export default class VehicleController {
   }
 
   private static getIncludes(withPhone = false) {
-    const userAttrs = withPhone
-      ? ["name", "email", "phone"]
-      : ["name", "email"];
+    const userAttrs = withPhone ? ["name", "phone"] : ["name"];
     return [
       { model: User, as: "user", attributes: userAttrs },
       { model: User, as: "Buyer", attributes: ["name"] },

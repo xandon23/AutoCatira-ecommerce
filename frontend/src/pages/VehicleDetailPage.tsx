@@ -11,7 +11,7 @@ import api, {
 import "../styles/VehicleDetailPage.css";
 import { useParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
-import { IVehicle, IProposal, IVehicleImage } from "../types";
+import { IVehicle, IProposal, IVehicleImage, ProposalStatus } from "../types";
 
 interface IProposalForm {
   cashOffer: string | number;
@@ -108,7 +108,7 @@ export default function VehicleDetailPage() {
     setShowForm(false);
   };
 
-  const handleStatus = async (propId: string, status: string) => {
+  const handleStatus = async (propId: string, status: ProposalStatus) => {
     try {
       await updateProposalStatus(propId, status);
       setProposals((prev) =>
@@ -421,7 +421,7 @@ export default function VehicleDetailPage() {
 
 interface ProposalListProps {
   proposals: IProposal[];
-  onUpdateStatus: (id: string, status: string) => void;
+  onUpdateStatus: (id: string, status: ProposalStatus) => void;
 }
 
 function ProposalList({ proposals, onUpdateStatus }: ProposalListProps) {

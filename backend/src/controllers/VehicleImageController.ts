@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { Request, Response } from "express";
+import { AuthRequest } from "../middlewares/authMiddleware";
 import VehicleImage from "../models/VehicleImage";
 import Vehicle from "../models/Vehicle";
 import { IVehicleImage } from "../types";
@@ -21,15 +22,31 @@ export default class VehicleImageController {
     }
   }
 
-  static async delete(req: Request, res: Response): Promise<Response> {
+  static async delete(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { imageId } = req.params;
+
       const image = await VehicleImageController.fetchImage(imageId as string);
 
+      const vehicle = await Vehicle.findByPk(image.vehicleId);
+
+      if (!vehicle) {
+        throw new Error("Veículo não encontrado.|404");
+      }
+
+      if (String(vehicle.userId) !== String(req.userId)) {
+        throw new Error(
+          "Você não possui permissão para excluir esta imagem.|403",
+        );
+      }
+
       VehicleImageController.removePhysicalFile(image.url as string);
+
       await image.destroy();
 
-      return res.status(200).json({ message: "Imagem deletada com sucesso." });
+      return res.status(200).json({
+        message: "Imagem deletada com sucesso.",
+      });
     } catch (error) {
       return VehicleImageController.handleError(res, error as Error, 500);
     }

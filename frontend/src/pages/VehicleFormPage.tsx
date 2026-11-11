@@ -5,6 +5,7 @@ import {
   updateVehicle,
   getVehicleById,
   deleteVehicle,
+  deleteVehicleImage,
   getImageUrl,
 } from "../servicos/api";
 import api from "../servicos/api";
@@ -210,7 +211,7 @@ export default function VehicleFormPage() {
     if (!window.confirm("Excluir esta foto?")) return;
 
     try {
-      await deleteVehicle(imageId);
+      await deleteVehicleImage(imageId);
       setImages((prev) => prev.filter((img) => img.id !== imageId));
     } catch {
       alert("Erro ao excluir foto.");

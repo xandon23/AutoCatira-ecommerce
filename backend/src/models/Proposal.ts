@@ -8,6 +8,7 @@ import {
 } from "sequelize-typescript";
 import User from "./User";
 import Vehicle from "./Vehicle";
+import { ProposalStatus } from "../types";
 
 @Table({
   tableName: "proposals",
@@ -29,7 +30,7 @@ export default class Proposal extends Model {
     defaultValue: "PENDING",
     allowNull: false,
   })
-  declare status: string;
+  declare status: ProposalStatus;
 
   @Column({ type: DataType.TEXT, allowNull: true })
   declare message: string;

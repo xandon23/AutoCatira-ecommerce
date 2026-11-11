@@ -15,7 +15,12 @@ export default class AuthController {
 
       return res.status(200).json({
         message: "Login realizado com sucesso!",
-        user: { id: user.id, name: user.name, email: user.email },
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
         token,
       });
     } catch (error) {
@@ -38,8 +43,18 @@ export default class AuthController {
   }
 
   private static issueToken(user: IUser): string {
-    const secret = "SuaChaveSecretaSuperDificil123";
-    const payload = { id: user.id as string, name: user.name as string };
+    const secret = process.env.JWT_SECRET;
+
+    if (!secret) {
+      throw new Error("JWT_SECRET não configurado|500");
+    }
+
+    const payload = {
+      id: user.id as string,
+      name: user.name,
+      role: user.role,
+    };
+
     return jwt.sign(payload, secret, { expiresIn: "1d" });
   }
 

@@ -1,5 +1,12 @@
 import axios from "axios";
-import { IUser, IVehicle, IProposal, IReview, IVehicleImage } from "../types";
+import {
+  IUser,
+  IVehicle,
+  IProposal,
+  IReview,
+  IVehicleImage,
+  ProposalStatus,
+} from "../types";
 
 export const API_BASE_URL = process.env.REACT_APP_API_URL || "/api";
 
@@ -110,7 +117,7 @@ export const addVehicleImage = async (
 };
 
 export const deleteVehicleImage = async (id: string): Promise<void> => {
-  await api.delete(`/images/${id}`);
+  await api.delete(`/vehicles/images/${id}`);
 };
 
 // ─── PROPOSALS ────────────────────────────────────────────────────────────────
@@ -128,7 +135,7 @@ export const getProposalsByVehicle = async (
 
 export const updateProposalStatus = async (
   id: string,
-  status: string,
+  status: ProposalStatus,
 ): Promise<IProposal> => {
   const res = await api.put(`/proposals/${id}/status`, { status });
   return res.data;

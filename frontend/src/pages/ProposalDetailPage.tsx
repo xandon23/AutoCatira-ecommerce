@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import api, { getImageUrl } from "../servicos/api";
 // @ts-ignore
 import "../styles/ProposalDetailPage.css";
-import { IProposal, IVehicle, IUser } from "../types";
+import { IProposal, IVehicle, IUser, ProposalStatus } from "../types";
 
 interface IProposalDetail extends Omit<IProposal, "buyer"> {
   buyer?: IUser;
@@ -32,7 +32,7 @@ export default function ProposalDetailPage() {
       });
   }, [id, navigate]);
 
-  const handleDecision = async (decision: string) => {
+  const handleDecision = async (decision: ProposalStatus) => {
     try {
       await api.patch(`/proposals/${id}/status`, { status: decision });
       alert(

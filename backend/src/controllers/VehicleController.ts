@@ -64,11 +64,163 @@ export default class VehicleController {
     }
   }
 
+  static async getMine(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const vehicles = await Vehicle.findAll({
+        where: {
+          userId: req.userId,
+          status: "available",
+        },
+        order: [["createdAt", "DESC"]],
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["name", "email"],
+          },
+          {
+            model: VehicleImage,
+            as: "images",
+            attributes: ["id", "url"],
+          },
+        ],
+      });
+
+      return res.status(200).json(vehicles);
+    } catch (error) {
+      return VehicleController.handleError(res, error, 500);
+    }
+  }
+
+  static async getSold(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const vehicles = await Vehicle.findAll({
+        where: {
+          userId: req.userId,
+          status: "sold",
+        },
+
+        order: [["updatedAt", "DESC"]],
+
+        include: [
+          {
+            model: User,
+            as: "Buyer",
+            attributes: ["id", "name"],
+          },
+          {
+            model: VehicleImage,
+            as: "images",
+            attributes: ["id", "url"],
+          },
+        ],
+      });
+
+      return res.status(200).json(vehicles);
+    } catch (error) {
+      return VehicleController.handleError(res, error, 500);
+    }
+  }
+
+  static async getSoldById(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const id = req.params.id as string;
+
+      const vehicle = await Vehicle.findOne({
+        where: {
+          id,
+          userId: req.userId,
+          status: "sold",
+        },
+
+        include: [
+          {
+            model: User,
+            as: "Buyer",
+            attributes: ["id", "name", "phone", "email"],
+          },
+          {
+            model: VehicleImage,
+            as: "images",
+            attributes: ["id", "url"],
+          },
+        ],
+      });
+
+      if (!vehicle) {
+        throw new Error("Veículo vendido não encontrado|404");
+      }
+
+      const proposal = await Proposal.findOne({
+        where: {
+          status: "ACCEPTED",
+
+          [Op.or]: [
+            {
+              targetVehicleId: id,
+            },
+            {
+              offeredVehicleId: id,
+            },
+          ],
+        },
+
+        include: [
+          {
+            model: User,
+            as: "buyer",
+            attributes: ["id", "name"],
+          },
+
+          {
+            model: Vehicle,
+            as: "targetVehicle",
+            attributes: [
+              "id",
+              "brand",
+              "model",
+              "manufactureYear",
+              "modelYear",
+              "userId",
+            ],
+          },
+
+          {
+            model: Vehicle,
+            as: "offeredVehicle",
+            attributes: [
+              "id",
+              "brand",
+              "model",
+              "manufactureYear",
+              "modelYear",
+            ],
+          },
+        ],
+      });
+
+      let saleType: "SALE" | "TRADE" | null = null;
+
+      if (proposal) {
+        saleType =
+          String(proposal.targetVehicleId) === String(id) ? "SALE" : "TRADE";
+      }
+
+      return res.status(200).json({
+        vehicle,
+        proposal,
+        saleType,
+      });
+    } catch (error) {
+      return VehicleController.handleError(res, error, 500);
+    }
+  }
+
   static async getById(req: Request, res: Response): Promise<Response> {
     try {
       const id = req.params.id as string;
       const vehicle = await Vehicle.findByPk(id, {
-        include: VehicleController.getIncludes(true),
+        include: VehicleController.getIncludes(false),
       });
 
       if (!vehicle) throw new Error("Veículo não encontrado|404");
@@ -81,9 +233,19 @@ export default class VehicleController {
   static async update(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const id = req.params.id as string;
+
       const vehicle = await VehicleController.authorize(id, req.userId);
 
-      await vehicle.update(VehicleController.whitelist(req.body as IVehicle));
+      if (vehicle.status === "sold") {
+        throw new Error("Veículos vendidos não podem ser alterados|400");
+      }
+
+      const data = req.body as IVehicle;
+
+      VehicleController.validateVehicleData(data);
+
+      await vehicle.update(VehicleController.whitelist(data));
+
       return res
         .status(200)
         .json({ message: "Anúncio atualizado com sucesso!" });
@@ -96,6 +258,9 @@ export default class VehicleController {
     try {
       const id = req.params.id as string;
       const vehicle = await VehicleController.authorize(id, req.userId);
+      if (vehicle.status === "sold") {
+        throw new Error("Veículos vendidos não podem ser excluídos|400");
+      }
       await vehicle.destroy();
       return res.status(204).send();
     } catch (error) {
@@ -108,22 +273,27 @@ export default class VehicleController {
     try {
       const id = req.params.id as string;
       const sellerId = req.userId as string;
+      const buyerId = req.body.buyerId as string;
+
+      if (!buyerId) {
+        throw new Error("Comprador não informado|400");
+      }
       const vehicle = await VehicleController.authorize(id, sellerId);
       if (vehicle.status === "sold") {
         throw new Error("Este veículo já consta como vendido|400");
       }
 
       await vehicle.update(
-        { status: "sold", buyerId: req.body.buyerId },
-        { transaction: t },
+        {
+          status: "sold",
+          buyerId,
+        },
+        {
+          transaction: t,
+        },
       );
 
-      await VehicleController.manageProposals(
-        id,
-        req.body.buyerId,
-        sellerId,
-        t,
-      );
+      await VehicleController.manageProposals(id, buyerId, sellerId, t);
 
       await t.commit();
       return res.status(200).json({ message: "Venda finalizada com sucesso!" });
@@ -190,27 +360,54 @@ export default class VehicleController {
     t: any,
   ): Promise<void> {
     const winningProposal = await Proposal.findOne({
-      where: { targetVehicleId: vId, buyerId: bId },
+      where: {
+        targetVehicleId: vId,
+        buyerId: bId,
+        status: "IN_NEGOTIATION",
+      },
       transaction: t,
     });
 
-    if (winningProposal) {
-      await winningProposal.update({ status: "ACCEPTED" }, { transaction: t });
+    if (!winningProposal) {
+      throw new Error("Não existe negociação ativa com este comprador|400");
+    }
 
-      if (winningProposal.offeredVehicleId) {
-        await Vehicle.update(
-          { status: "sold", buyerId: sellerId },
-          { where: { id: winningProposal.offeredVehicleId }, transaction: t },
-        );
-      }
+    await winningProposal.update(
+      {
+        status: "ACCEPTED",
+      },
+      {
+        transaction: t,
+      },
+    );
+
+    if (winningProposal.offeredVehicleId) {
+      await Vehicle.update(
+        {
+          status: "sold",
+          buyerId: sellerId,
+        },
+        {
+          where: {
+            id: winningProposal.offeredVehicleId,
+          },
+          transaction: t,
+        },
+      );
     }
 
     await Proposal.update(
-      { status: "REJECTED" },
+      {
+        status: "REJECTED",
+      },
       {
         where: {
           targetVehicleId: vId,
-          buyerId: { [Op.ne]: bId },
+
+          id: {
+            [Op.ne]: winningProposal.id,
+          },
+
           status: ["PENDING", "IN_NEGOTIATION"],
         },
         transaction: t,

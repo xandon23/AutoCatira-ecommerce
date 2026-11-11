@@ -42,6 +42,13 @@ export default class User extends Model {
   @Column({ type: DataType.STRING, allowNull: false, unique: true })
   declare cpf: string;
 
+  @Column({
+    type: DataType.ENUM("USER", "ADMIN"),
+    allowNull: false,
+    defaultValue: "USER",
+  })
+  declare role: "USER" | "ADMIN";
+
   @BeforeSave
   static async hashPassword(instance: User) {
     if (instance.changed("password")) {

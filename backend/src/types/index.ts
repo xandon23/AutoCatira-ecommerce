@@ -1,7 +1,10 @@
+export type UserRole = "USER" | "ADMIN";
+
 export interface IUser {
   id?: string;
   name: string;
   email: string;
+  role: UserRole;
   password?: string;
   cpf?: string;
   phone: string;
@@ -37,17 +40,30 @@ export interface IVehicleImage {
   url: string;
 }
 
+export type ProposalStatus =
+  | "PENDING"
+  | "IN_NEGOTIATION"
+  | "ACCEPTED"
+  | "REJECTED";
+
 export interface IProposal {
-  id?: string;
-  targetVehicleId: string;
-  buyerId: string;
-  offeredVehicleId?: string | null;
+  id: string;
   cashOffer: number;
+  status: ProposalStatus;
   message?: string | null;
-  status: "pending" | "ACCEPTED" | "rejected";
+
+  buyerId: string;
+  targetVehicleId: string;
+  offeredVehicleId?: string | null;
+
+  buyer?: {
+    name?: string;
+    phone?: string;
+    email?: string;
+  };
+
   targetVehicle?: IVehicle;
   offeredVehicle?: IVehicle;
-  buyer?: Partial<IUser>;
 }
 
 export interface IReview {
@@ -58,4 +74,10 @@ export interface IReview {
   comment: string;
   createdAt?: Date;
   reviewer?: Partial<IUser>;
+}
+
+export interface ICreateReview {
+  proposalId: string;
+  rating: number;
+  comment?: string;
 }

@@ -1,8 +1,10 @@
+import { UserRole } from "../types";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
 export interface AuthRequest extends Request {
   userId?: string;
+  userRole?: UserRole;
 }
 
 export const authMiddleware = (
@@ -28,11 +30,23 @@ export const authMiddleware = (
     return res.status(401).json({ error: "Token malformatado." });
   }
 
-  jwt.verify(token, "SuaChaveSecretaSuperDificil123", (err, decoded: any) => {
-    if (err)
-      return res.status(401).json({ error: "Token inválido ou expirado." });
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    return res.status(500).json({
+      error: "JWT_SECRET não configurado.",
+    });
+  }
+
+  jwt.verify(token, secret, (err, decoded: any) => {
+    if (err) {
+      return res.status(401).json({
+        error: "Token inválido ou expirado.",
+      });
+    }
 
     req.userId = decoded.id;
+    req.userRole = decoded.role;
 
     return next();
   });

@@ -72,6 +72,22 @@ export default class ProposalController {
 
       await proposal.update({ status });
 
+      if (status === "IN_NEGOTIATION") {
+        const buyer = await User.findByPk(proposal.buyerId, {
+          attributes: ["name", "phone"],
+        });
+
+        return res.status(200).json({
+          message: "Status atualizado com sucesso!",
+          contact: buyer
+            ? {
+                name: buyer.name,
+                phone: buyer.phone,
+              }
+            : null,
+        });
+      }
+
       return res
         .status(200)
         .json({ message: "Status atualizado com sucesso!" });
@@ -80,15 +96,98 @@ export default class ProposalController {
     }
   }
 
-  static async getByVehicle(req: Request, res: Response): Promise<Response> {
+  static async getReceivedVehicles(
+    req: AuthRequest,
+    res: Response,
+  ): Promise<Response> {
     try {
-      const proposals = await Proposal.findAll({
-        where: { targetVehicleId: req.params.vehicleId },
+      const userId = req.userId as string;
+
+      const vehicles = await Vehicle.findAll({
+        where: {
+          userId,
+        },
         include: [
-          { model: User, as: "buyer", attributes: ["name", "phone"] },
-          { model: Vehicle, as: "offeredVehicle" },
+          {
+            model: Proposal,
+            as: "receivedProposals",
+            where: {
+              status: "PENDING",
+            },
+            attributes: ["id"],
+            required: true,
+          },
+          {
+            model: VehicleImage,
+            as: "images",
+            attributes: ["id", "url"],
+          },
         ],
+        order: [["createdAt", "DESC"]],
       });
+
+      const result = vehicles.map((vehicle) => {
+        const data = vehicle.get({
+          plain: true,
+        }) as any;
+
+        return {
+          ...data,
+
+          pendingProposalCount: data.receivedProposals?.length ?? 0,
+
+          receivedProposals: undefined,
+        };
+      });
+
+      return res.status(200).json(result);
+    } catch (error) {
+      return ProposalController.handleError(res, error, 500);
+    }
+  }
+
+  static async getByVehicle(
+    req: AuthRequest,
+    res: Response,
+  ): Promise<Response> {
+    try {
+      const vehicleId = req.params.vehicleId as string;
+
+      const vehicle = await Vehicle.findByPk(vehicleId);
+
+      if (!vehicle) {
+        throw new Error("Veículo não encontrado.|404");
+      }
+
+      if (String(vehicle.userId) !== String(req.userId)) {
+        throw new Error("Acesso negado.|403");
+      }
+
+      const proposals = await Proposal.findAll({
+        where: {
+          targetVehicleId: vehicleId,
+        },
+        include: [
+          {
+            model: User,
+            as: "buyer",
+            attributes: ["name"],
+          },
+          {
+            model: Vehicle,
+            as: "offeredVehicle",
+            include: [
+              {
+                model: VehicleImage,
+                as: "images",
+                attributes: ["id", "url"],
+              },
+            ],
+          },
+        ],
+        order: [["createdAt", "DESC"]],
+      });
+
       return res.status(200).json(proposals);
     } catch (error) {
       return ProposalController.handleError(res, error, 500);
@@ -109,6 +208,122 @@ export default class ProposalController {
       });
       if (!proposal) throw new Error("Proposta não encontrada.|404");
       return res.status(200).json(proposal);
+    } catch (error) {
+      return ProposalController.handleError(res, error, 500);
+    }
+  }
+
+  static async getNegotiations(
+    req: AuthRequest,
+    res: Response,
+  ): Promise<Response> {
+    try {
+      const userId = req.userId as string;
+
+      const proposals = await Proposal.findAll({
+        where: {
+          status: "IN_NEGOTIATION",
+        },
+        include: [
+          {
+            model: Vehicle,
+            as: "targetVehicle",
+            where: {
+              userId,
+            },
+            include: [
+              {
+                model: VehicleImage,
+                as: "images",
+                attributes: ["id", "url"],
+              },
+            ],
+          },
+          {
+            model: User,
+            as: "buyer",
+            attributes: ["name", "phone", "email"],
+          },
+          {
+            model: Vehicle,
+            as: "offeredVehicle",
+            include: [
+              {
+                model: VehicleImage,
+                as: "images",
+                attributes: ["id", "url"],
+              },
+            ],
+          },
+        ],
+        order: [["updatedAt", "DESC"]],
+      });
+
+      return res.status(200).json(proposals);
+    } catch (error) {
+      return ProposalController.handleError(res, error, 500);
+    }
+  }
+
+  static async getMine(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const userId = req.userId as string;
+
+      const proposals = await Proposal.findAll({
+        where: {
+          buyerId: userId,
+        },
+
+        include: [
+          {
+            model: Vehicle,
+            as: "targetVehicle",
+            include: [
+              {
+                model: User,
+                as: "user",
+                attributes: ["name", "phone"],
+              },
+              {
+                model: VehicleImage,
+                as: "images",
+                attributes: ["id", "url"],
+              },
+            ],
+          },
+
+          {
+            model: Vehicle,
+            as: "offeredVehicle",
+            include: [
+              {
+                model: VehicleImage,
+                as: "images",
+                attributes: ["id", "url"],
+              },
+            ],
+          },
+        ],
+
+        order: [["createdAt", "DESC"]],
+      });
+
+      const result = proposals.map((proposal) => {
+        const data = proposal.get({
+          plain: true,
+        }) as any;
+
+        const canSeeContact =
+          data.status === "IN_NEGOTIATION" || data.status === "ACCEPTED";
+
+        if (!canSeeContact && data.targetVehicle?.user) {
+          delete data.targetVehicle.user.phone;
+        }
+
+        return data;
+      });
+
+      return res.status(200).json(result);
     } catch (error) {
       return ProposalController.handleError(res, error, 500);
     }

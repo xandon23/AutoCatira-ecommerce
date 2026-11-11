@@ -1,4 +1,4 @@
-import { Response, Request } from "express";
+import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import Proposal from "../models/Proposal";
 import User from "../models/User";
@@ -194,11 +194,12 @@ export default class ProposalController {
     }
   }
 
-  static async getById(req: Request, res: Response): Promise<Response> {
+  static async getById(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const proposal = await Proposal.findByPk(req.params.id as string, {
         include: [
           { model: User, as: "buyer", attributes: ["name", "phone", "email"] },
+          { model: Vehicle, as: "targetVehicle", attributes: ["id", "userId"] },
           {
             model: Vehicle,
             as: "offeredVehicle",
@@ -207,6 +208,15 @@ export default class ProposalController {
         ],
       });
       if (!proposal) throw new Error("Proposta não encontrada.|404");
+
+      const isBuyer = String(proposal.buyerId) === String(req.userId);
+      const isSeller =
+        String(proposal.targetVehicle?.userId) === String(req.userId);
+
+      if (!isBuyer && !isSeller) {
+        throw new Error("Acesso negado.|403");
+      }
+
       return res.status(200).json(proposal);
     } catch (error) {
       return ProposalController.handleError(res, error, 500);

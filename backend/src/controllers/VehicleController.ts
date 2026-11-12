@@ -10,6 +10,12 @@ import { Op } from "sequelize";
 import { IVehicle } from "../types";
 import { AppError } from "../utils/AppError";
 import { logger } from "../utils/logger";
+import {
+  CACHE_TTL,
+  cacheKeys,
+  getOrSet,
+  invalidateVehicle,
+} from "../cache/cacheService";
 
 export default class VehicleController {
   static async create(req: AuthRequest, res: Response): Promise<Response> {
@@ -25,6 +31,8 @@ export default class VehicleController {
 
       logger.info("anuncio.criado", { vehicleId: vehicle.id, userId: req.userId });
 
+      await invalidateVehicle();
+
       return res
         .status(201)
         .json({ message: "Anunciado com sucesso!", vehicle });
@@ -35,35 +43,49 @@ export default class VehicleController {
 
   static async getAll(req: Request, res: Response): Promise<Response> {
     try {
-      const { page = 1, limit = 10, includeSold } = req.query;
-      const offset = (Number(page) - 1) * Number(limit);
-      const where =
-        includeSold === "true" ? {} : { status: { [Op.ne]: "sold" } };
+      // Paginação saneada: página >= 1 e no máximo 50 itens por página.
+      const page = Math.max(1, Math.floor(Number(req.query.page)) || 1);
+      const limit = Math.min(
+        50,
+        Math.max(1, Math.floor(Number(req.query.limit)) || 10),
+      );
+      const includeSold = req.query.includeSold === "true";
+      const offset = (page - 1) * limit;
+      const where = includeSold ? {} : { status: { [Op.ne]: "sold" } };
 
-      const { count, rows } = await Vehicle.findAndCountAll({
-        where,
-        limit: Number(limit),
-        offset,
-        order: [["createdAt", "DESC"]],
-        include: [
-          {
-            model: User,
-            as: "user",
-            attributes: ["name"],
-          },
-          {
-            model: VehicleImage,
-            as: "images",
-            attributes: ["id", "url"],
-          },
-        ],
-      });
+      const { data, cache } = await getOrSet(
+        cacheKeys.vehicleList(page, limit, includeSold),
+        CACHE_TTL.vehicleList,
+        async () => {
+          const { count, rows } = await Vehicle.findAndCountAll({
+            where,
+            limit,
+            offset,
+            order: [["createdAt", "DESC"]],
+            include: [
+              {
+                model: User,
+                as: "user",
+                attributes: ["name"],
+              },
+              {
+                model: VehicleImage,
+                as: "images",
+                attributes: ["id", "url"],
+              },
+            ],
+          });
 
-      return res.status(200).json({
-        total: count,
-        totalPages: Math.ceil(count / Number(limit)),
-        vehicles: rows,
-      });
+          return {
+            total: count,
+            totalPages: Math.ceil(count / limit),
+            vehicles: rows.map((row) => row.toJSON()),
+          };
+        },
+      );
+
+      res.setHeader("X-Cache", cache);
+      return res.status(200).json(data);
     } catch (error) {
       return sendError(res, error, 500);
     }
@@ -224,12 +246,23 @@ export default class VehicleController {
   static async getById(req: Request, res: Response): Promise<Response> {
     try {
       const id = req.params.id as string;
-      const vehicle = await Vehicle.findByPk(id, {
-        include: VehicleController.getIncludes(false),
-      });
 
-      if (!vehicle) throw new Error("Veículo não encontrado|404");
-      return res.status(200).json(vehicle);
+      const { data, cache } = await getOrSet(
+        cacheKeys.vehicleDetail(id),
+        CACHE_TTL.vehicleDetail,
+        async () => {
+          const vehicle = await Vehicle.findByPk(id, {
+            include: VehicleController.getIncludes(false),
+          });
+
+          if (!vehicle) throw new AppError("Veículo não encontrado", 404);
+
+          return vehicle.toJSON();
+        },
+      );
+
+      res.setHeader("X-Cache", cache);
+      return res.status(200).json(data);
     } catch (error) {
       return sendError(res, error, 500);
     }
@@ -250,6 +283,10 @@ export default class VehicleController {
       VehicleController.validateVehicleData(data);
 
       await vehicle.update(VehicleController.whitelist(data));
+
+      logger.info("anuncio.atualizado", { vehicleId: id, userId: req.userId });
+
+      await invalidateVehicle(id);
 
       return res
         .status(200)
@@ -293,6 +330,8 @@ export default class VehicleController {
 
       await vehicle.destroy({ transaction: t });
       await t.commit();
+
+      await invalidateVehicle(id);
 
       logger.info("anuncio.excluido", {
         vehicleId: id,

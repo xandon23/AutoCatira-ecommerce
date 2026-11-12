@@ -5,6 +5,7 @@ import Vehicle from "../../models/Vehicle";
 import { AppError } from "../../utils/AppError";
 import { logger } from "../../utils/logger";
 import { FinalizeSaleDTO } from "./dtos/proposal.dto";
+import { invalidate, cacheKeys } from "../../cache/cacheService";
 
 // Finalização da venda: encerra a negociação vencedora, marca os
 // veículos envolvidos como vendidos e rejeita as demais propostas.
@@ -15,6 +16,8 @@ export default class SaleService {
     sellerId: string,
     dto: FinalizeSaleDTO,
   ): Promise<void> {
+    const soldVehicleIds: string[] = [vehicleId];
+
     await sequelize.transaction(async (t) => {
       const vehicle = await Vehicle.findByPk(vehicleId, { transaction: t });
 
@@ -53,8 +56,6 @@ export default class SaleService {
 
       // Veículos que saem do mercado com esta venda: o anunciado e,
       // se houver troca, o veículo oferecido pelo comprador.
-      const soldVehicleIds = [vehicleId];
-
       if (winningProposal.offeredVehicleId) {
         soldVehicleIds.push(winningProposal.offeredVehicleId);
 
@@ -78,6 +79,11 @@ export default class SaleService {
         propostasRejeitadas: rejected,
       });
     });
+
+    // Após a venda confirmada, os dados em cache ficam desatualizados.
+    await invalidate(soldVehicleIds.map(cacheKeys.vehicleDetail), [
+      cacheKeys.vehicleListPrefix,
+    ]);
   }
 
   // Rejeita qualquer outra proposta ativa que tenha um dos veículos

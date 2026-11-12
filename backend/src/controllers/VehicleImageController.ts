@@ -1,4 +1,5 @@
 import fs from "fs";
+import { sendError } from "../utils/httpError";
 import path from "path";
 import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
@@ -18,7 +19,7 @@ export default class VehicleImageController {
 
       return res.status(201).json(image as IVehicleImage);
     } catch (error) {
-      return VehicleImageController.handleError(res, error as Error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -48,7 +49,7 @@ export default class VehicleImageController {
         message: "Imagem deletada com sucesso.",
       });
     } catch (error) {
-      return VehicleImageController.handleError(res, error as Error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -70,13 +71,4 @@ export default class VehicleImageController {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   }
 
-  private static handleError(
-    res: Response,
-    err: Error,
-    defStatus: number,
-  ): Response {
-    const [msg, status] = err.message.split("|");
-    const statusCode = status ? Number(status) : defStatus;
-    return res.status(statusCode).json({ error: msg });
-  }
 }

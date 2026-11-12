@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { sendError } from "../utils/httpError";
 import User from "../models/User";
 import {
   validarCPF,
@@ -39,7 +40,7 @@ export default class UserController {
         },
       });
     } catch (error) {
-      return UserController.handleError(res, error, 400);
+      return sendError(res, error, 400);
     }
   }
 
@@ -57,7 +58,7 @@ export default class UserController {
 
       return res.status(200).json(users);
     } catch (error) {
-      return UserController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -82,7 +83,7 @@ export default class UserController {
 
       return res.status(200).json(user);
     } catch (error) {
-      return UserController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -99,7 +100,7 @@ export default class UserController {
         user: { name, phone, email: user.email },
       });
     } catch (error) {
-      return UserController.handleError(res, error, 400);
+      return sendError(res, error, 400);
     }
   }
 
@@ -111,7 +112,7 @@ export default class UserController {
 
       return res.status(204).send();
     } catch (error) {
-      return UserController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -156,14 +157,4 @@ export default class UserController {
       throw new Error("Alteração de e-mail proibida|403");
   }
 
-  private static handleError(
-    res: Response,
-    error: unknown,
-    defaultStatus: number,
-  ): Response {
-    const err = error as Error;
-    const [message, status] = err.message.split("|");
-    const statusCode = status ? Number(status) : defaultStatus;
-    return res.status(statusCode).json({ error: message });
-  }
 }

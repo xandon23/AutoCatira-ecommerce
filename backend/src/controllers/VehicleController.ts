@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { sendError } from "../utils/httpError";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import Vehicle from "../models/Vehicle";
 import User from "../models/User";
@@ -7,6 +8,8 @@ import sequelize from "../config/database";
 import Proposal from "../models/Proposal";
 import { Op } from "sequelize";
 import { IVehicle } from "../types";
+import { AppError } from "../utils/AppError";
+import { logger } from "../utils/logger";
 
 export default class VehicleController {
   static async create(req: AuthRequest, res: Response): Promise<Response> {
@@ -20,11 +23,13 @@ export default class VehicleController {
         userId: req.userId,
       });
 
+      logger.info("anuncio.criado", { vehicleId: vehicle.id, userId: req.userId });
+
       return res
         .status(201)
         .json({ message: "Anunciado com sucesso!", vehicle });
     } catch (error) {
-      return VehicleController.handleError(res, error, 400);
+      return sendError(res, error, 400);
     }
   }
 
@@ -60,7 +65,7 @@ export default class VehicleController {
         vehicles: rows,
       });
     } catch (error) {
-      return VehicleController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -88,7 +93,7 @@ export default class VehicleController {
 
       return res.status(200).json(vehicles);
     } catch (error) {
-      return VehicleController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -118,7 +123,7 @@ export default class VehicleController {
 
       return res.status(200).json(vehicles);
     } catch (error) {
-      return VehicleController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -212,7 +217,7 @@ export default class VehicleController {
         saleType,
       });
     } catch (error) {
-      return VehicleController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -226,7 +231,7 @@ export default class VehicleController {
       if (!vehicle) throw new Error("Veículo não encontrado|404");
       return res.status(200).json(vehicle);
     } catch (error) {
-      return VehicleController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -250,21 +255,55 @@ export default class VehicleController {
         .status(200)
         .json({ message: "Anúncio atualizado com sucesso!" });
     } catch (error) {
-      return VehicleController.handleError(res, error, 400);
+      return sendError(res, error, 400);
     }
   }
 
   static async delete(req: AuthRequest, res: Response): Promise<Response> {
+    const t = await sequelize.transaction();
     try {
       const id = req.params.id as string;
       const vehicle = await VehicleController.authorize(id, req.userId);
       if (vehicle.status === "sold") {
-        throw new Error("Veículos vendidos não podem ser excluídos|400");
+        throw new AppError("Veículos vendidos não podem ser excluídos", 400);
       }
-      await vehicle.destroy();
+
+      const relatedToVehicle = {
+        [Op.or]: [{ targetVehicleId: id }, { offeredVehicleId: id }],
+      };
+
+      // Não exclui anúncio com negociação em andamento (como alvo ou troca).
+      const activeNegotiation = await Proposal.count({
+        where: { ...relatedToVehicle, status: ["IN_NEGOTIATION", "ACCEPTED"] },
+        transaction: t,
+      });
+
+      if (activeNegotiation > 0) {
+        throw new AppError(
+          "Não é possível excluir um anúncio com negociação em andamento.",
+          400,
+        );
+      }
+
+      // Propostas pendentes ou recusadas ligadas ao veículo saem junto.
+      const removedProposals = await Proposal.destroy({
+        where: { ...relatedToVehicle, status: ["PENDING", "REJECTED"] },
+        transaction: t,
+      });
+
+      await vehicle.destroy({ transaction: t });
+      await t.commit();
+
+      logger.info("anuncio.excluido", {
+        vehicleId: id,
+        userId: req.userId,
+        propostasRemovidas: removedProposals,
+      });
+
       return res.status(204).send();
     } catch (error) {
-      return VehicleController.handleError(res, error, 500);
+      await t.rollback();
+      return sendError(res, error, 500);
     }
   }
 
@@ -296,10 +335,17 @@ export default class VehicleController {
       await VehicleController.manageProposals(id, buyerId, sellerId, t);
 
       await t.commit();
+
+      logger.info("veiculo.vendido", {
+        vehicleId: id,
+        sellerId,
+        buyerId,
+      });
+
       return res.status(200).json({ message: "Venda finalizada com sucesso!" });
     } catch (error) {
       await t.rollback();
-      return VehicleController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -433,13 +479,4 @@ export default class VehicleController {
     ];
   }
 
-  private static handleError(
-    res: Response,
-    error: unknown,
-    defStatus: number,
-  ): Response {
-    const err = error as Error;
-    const [msg, status] = err.message.split("|");
-    return res.status(status ? Number(status) : defStatus).json({ error: msg });
-  }
 }

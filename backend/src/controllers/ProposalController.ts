@@ -1,10 +1,13 @@
 import { Response } from "express";
+import { sendError } from "../utils/httpError";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import Proposal from "../models/Proposal";
 import User from "../models/User";
 import Vehicle from "../models/Vehicle";
 import VehicleImage from "../models/VehicleImage";
 import { IProposal, IVehicle } from "../types";
+import { AppError } from "../utils/AppError";
+import { logger } from "../utils/logger";
 
 export default class ProposalController {
   static async create(req: AuthRequest, res: Response): Promise<Response> {
@@ -18,6 +21,18 @@ export default class ProposalController {
 
       const vehicle = vModel.get({ plain: true }) as IVehicle;
 
+      // Proposta só com veículo na troca: valor em dinheiro vira 0.
+      const cashOffer =
+        data.cashOffer === undefined || data.cashOffer === null || (data.cashOffer as unknown) === ""
+          ? 0
+          : Number(data.cashOffer);
+
+      if (Number.isNaN(cashOffer)) {
+        throw new AppError("Valor da proposta inválido.", 400);
+      }
+
+      data.cashOffer = cashOffer;
+
       ProposalController.validateProposalRules(vehicle, userId, data);
       if (data.offeredVehicleId) {
         await ProposalController.validateTradeIn(
@@ -26,19 +41,41 @@ export default class ProposalController {
         );
       }
 
+      const activeProposal = await Proposal.findOne({
+        where: {
+          targetVehicleId: data.targetVehicleId,
+          buyerId: userId,
+          status: ["PENDING", "IN_NEGOTIATION"],
+        },
+      });
+
+      if (activeProposal) {
+        throw new AppError(
+          "Você já possui uma proposta ativa para este veículo.",
+          409,
+        );
+      }
+
       const proposal = await Proposal.create({
         targetVehicleId: data.targetVehicleId,
         buyerId: userId,
-        cashOffer: data.cashOffer,
+        cashOffer,
         offeredVehicleId: data.offeredVehicleId || null,
         status: "PENDING",
         message: data.message || null,
       });
 
+      logger.info("proposta.criada", {
+        proposalId: proposal.id,
+        vehicleId: data.targetVehicleId,
+        buyerId: userId,
+        comTroca: !!data.offeredVehicleId,
+      });
+
       return res.status(201).json({ message: "Proposta enviada!", proposal });
     } catch (error) {
       const err = error as Error;
-      return ProposalController.handleError(res, err, 400);
+      return sendError(res, err, 400);
     }
   }
 
@@ -70,7 +107,15 @@ export default class ProposalController {
         throw new Error("Transição de status inválida.|400");
       }
 
+      const previousStatus = proposal.status;
+
       await proposal.update({ status });
+
+      logger.info("proposta.status_alterado", {
+        proposalId: proposal.id,
+        de: previousStatus,
+        para: status,
+      });
 
       if (status === "IN_NEGOTIATION") {
         const buyer = await User.findByPk(proposal.buyerId, {
@@ -92,7 +137,7 @@ export default class ProposalController {
         .status(200)
         .json({ message: "Status atualizado com sucesso!" });
     } catch (error) {
-      return ProposalController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -142,7 +187,7 @@ export default class ProposalController {
 
       return res.status(200).json(result);
     } catch (error) {
-      return ProposalController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -190,7 +235,7 @@ export default class ProposalController {
 
       return res.status(200).json(proposals);
     } catch (error) {
-      return ProposalController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -219,7 +264,7 @@ export default class ProposalController {
 
       return res.status(200).json(proposal);
     } catch (error) {
-      return ProposalController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -271,7 +316,7 @@ export default class ProposalController {
 
       return res.status(200).json(proposals);
     } catch (error) {
-      return ProposalController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -335,7 +380,7 @@ export default class ProposalController {
 
       return res.status(200).json(result);
     } catch (error) {
-      return ProposalController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -394,13 +439,4 @@ export default class ProposalController {
     return p;
   }
 
-  private static handleError(
-    res: Response,
-    error: unknown,
-    defStatus: number,
-  ): Response {
-    const err = error as Error;
-    const [msg, status] = err.message.split("|");
-    return res.status(status ? Number(status) : defStatus).json({ error: msg });
-  }
 }

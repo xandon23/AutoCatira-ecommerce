@@ -1,17 +1,27 @@
 import { Request, Response } from "express";
+import { sendError } from "../utils/httpError";
 import User from "../models/User";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { IUser } from "../types";
+import { AppError } from "../utils/AppError";
+import { logger } from "../utils/logger";
 
 export default class AuthController {
   static async login(req: Request, res: Response): Promise<Response> {
     try {
-      const { email, password } = req.body;
+      const { email, password } = req.body ?? {};
+
+      if (!email || !password) {
+        throw new AppError("Informe e-mail e senha.", 400);
+      }
+
       const user = await AuthController.getUser(email);
 
       await AuthController.checkPassword(password, user.password as string);
       const token = AuthController.issueToken(user);
+
+      logger.info("auth.login_sucesso", { userId: user.id, role: user.role });
 
       return res.status(200).json({
         message: "Login realizado com sucesso!",
@@ -24,7 +34,10 @@ export default class AuthController {
         token,
       });
     } catch (error) {
-      return AuthController.handleError(res, error as Error);
+      if (error instanceof Error && error.message.endsWith("|401")) {
+        logger.warn("auth.login_falhou");
+      }
+      return sendError(res, error);
     }
   }
 
@@ -58,9 +71,4 @@ export default class AuthController {
     return jwt.sign(payload, secret, { expiresIn: "1d" });
   }
 
-  private static handleError(res: Response, err: Error): Response {
-    const [msg, status] = err.message.split("|");
-    const statusCode = status ? Number(status) : 500;
-    return res.status(statusCode).json({ error: msg });
-  }
 }

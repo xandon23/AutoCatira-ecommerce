@@ -2,7 +2,7 @@ import cors from "cors";
 import express from "express";
 import UserRoutes from "./routes/UserRoutes";
 import VehicleRoutes from "./routes/VehicleRoutes";
-import ProposalRoutes from "./routes/ProposalRoutes";
+import ProposalRoutes from "./modules/negotiation/proposal.routes";
 import ReviewRoutes from "./routes/ReviewRoutes";
 import AuthRoutes from "./routes/AuthRoutes";
 import AdminRoutes from "./routes/AdminRoutes";

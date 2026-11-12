@@ -1,6 +1,6 @@
 import { Router } from "express";
-import ProposalController from "../controllers/ProposalController";
-import { authMiddleware } from "../middlewares/authMiddleware";
+import ProposalController from "./proposal.controller";
+import { authMiddleware } from "../../middlewares/authMiddleware";
 
 const router = Router();
 

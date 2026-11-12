@@ -3,6 +3,7 @@ import multer from "multer";
 import { multerConfig } from "../config/multer";
 import VehicleController from "../controllers/VehicleController";
 import VehicleImageController from "../controllers/VehicleImageController";
+import ProposalController from "../modules/negotiation/proposal.controller";
 import { authMiddleware } from "../middlewares/authMiddleware";
 import { vehicleOwnershipMiddleware } from "../middlewares/vehicleOwnershipMiddleware";
 
@@ -20,7 +21,8 @@ router.get("/:id", VehicleController.getById);
 router.post("/", authMiddleware, VehicleController.create);
 router.put("/:id", authMiddleware, VehicleController.update);
 router.delete("/:id", authMiddleware, VehicleController.delete);
-router.patch("/:id/sell", authMiddleware, VehicleController.sell);
+// Finalização da venda pertence ao contexto de Negociação.
+router.patch("/:id/sell", authMiddleware, ProposalController.finalizeSale);
 
 router.post(
   "/:vehicleId/images",

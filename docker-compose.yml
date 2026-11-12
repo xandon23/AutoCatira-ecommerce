@@ -19,6 +19,17 @@ services:
       - autocatira_network
 
   # ----------------------------------------
+  # CACHE E MENSAGERIA (Redis)
+  # ----------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: autocatira_redis
+    restart: always
+    command: ["redis-server", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    networks:
+      - autocatira_network
+
+  # ----------------------------------------
   # BACK-END (API Node.js)
   # ----------------------------------------
   backend:
@@ -33,8 +44,10 @@ services:
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - DB_NAME=${MYSQL_DATABASE}
       - JWT_SECRET=${JWT_SECRET}
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - db
+      - redis
     volumes:
       - ./backend/uploads:/app/uploads
     networks:

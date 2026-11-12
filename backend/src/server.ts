@@ -1,8 +1,12 @@
 import sequelize from "./config/database";
 import { logger } from "./utils/logger";
 import app from "./app";
+import { connectRedis } from "./config/redis";
 
 const port = 3333;
+
+// Redis conecta em paralelo e não impede a API de subir.
+connectRedis();
 
 sequelize
   .sync()

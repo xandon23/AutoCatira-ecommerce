@@ -6,6 +6,7 @@ import { AuthRequest } from "../middlewares/authMiddleware";
 import VehicleImage from "../models/VehicleImage";
 import Vehicle from "../models/Vehicle";
 import { IVehicleImage } from "../types";
+import { invalidateVehicle } from "../cache/cacheService";
 
 export default class VehicleImageController {
   static async upload(req: Request, res: Response): Promise<Response> {
@@ -16,6 +17,8 @@ export default class VehicleImageController {
       await VehicleImageController.checkVehicleExists(vehicleId as string);
       const url = `/uploads/${req.file.filename}`;
       const image = await VehicleImage.create({ vehicleId, url });
+
+      await invalidateVehicle(vehicleId as string);
 
       return res.status(201).json(image as IVehicleImage);
     } catch (error) {
@@ -44,6 +47,8 @@ export default class VehicleImageController {
       VehicleImageController.removePhysicalFile(image.url as string);
 
       await image.destroy();
+
+      await invalidateVehicle(String(image.vehicleId));
 
       return res.status(200).json({
         message: "Imagem deletada com sucesso.",

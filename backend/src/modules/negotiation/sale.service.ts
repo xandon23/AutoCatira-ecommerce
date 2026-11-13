@@ -6,6 +6,7 @@ import { AppError } from "../../utils/AppError";
 import { logger } from "../../utils/logger";
 import { FinalizeSaleDTO } from "./dtos/proposal.dto";
 import { invalidate, cacheKeys } from "../../cache/cacheService";
+import { publishEvent } from "../../events/eventPublisher";
 
 // Finalização da venda: encerra a negociação vencedora, marca os
 // veículos envolvidos como vendidos e rejeita as demais propostas.
@@ -17,6 +18,7 @@ export default class SaleService {
     dto: FinalizeSaleDTO,
   ): Promise<void> {
     const soldVehicleIds: string[] = [vehicleId];
+    let rejectedCount = 0;
 
     await sequelize.transaction(async (t) => {
       const vehicle = await Vehicle.findByPk(vehicleId, { transaction: t });
@@ -65,7 +67,7 @@ export default class SaleService {
         );
       }
 
-      const rejected = await SaleService.rejectRelatedProposals(
+      rejectedCount = await SaleService.rejectRelatedProposals(
         soldVehicleIds,
         winningProposal.id,
         t,
@@ -76,7 +78,7 @@ export default class SaleService {
         sellerId,
         buyerId: dto.buyerId,
         comTroca: !!winningProposal.offeredVehicleId,
-        propostasRejeitadas: rejected,
+        propostasRejeitadas: rejectedCount,
       });
     });
 
@@ -84,6 +86,15 @@ export default class SaleService {
     await invalidate(soldVehicleIds.map(cacheKeys.vehicleDetail), [
       cacheKeys.vehicleListPrefix,
     ]);
+
+    // Evento publicado só depois da transação confirmada.
+    await publishEvent("veiculo.vendido", {
+      vehicleId,
+      sellerId,
+      buyerId: dto.buyerId,
+      comTroca: soldVehicleIds.length > 1,
+      propostasRejeitadas: rejectedCount,
+    });
   }
 
   // Rejeita qualquer outra proposta ativa que tenha um dos veículos

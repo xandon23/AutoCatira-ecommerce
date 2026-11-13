@@ -4,6 +4,7 @@ import Vehicle from "../../models/Vehicle";
 import VehicleImage from "../../models/VehicleImage";
 import { AppError } from "../../utils/AppError";
 import { logger } from "../../utils/logger";
+import { publishEvent } from "../../events/eventPublisher";
 import {
   BuyerContactDTO,
   CreateProposalDTO,
@@ -76,6 +77,14 @@ export default class ProposalService {
       comTroca: hasTrade,
     });
 
+    await publishEvent("proposta.criada", {
+      proposalId: proposal.id,
+      vehicleId: dto.targetVehicleId,
+      buyerId,
+      sellerId: vehicle.userId,
+      comTroca: hasTrade,
+    });
+
     return proposal;
   }
 
@@ -110,6 +119,14 @@ export default class ProposalService {
 
     logger.info("proposta.status_alterado", {
       proposalId: proposal.id,
+      de: previousStatus,
+      para: dto.status,
+    });
+
+    await publishEvent("proposta.status_alterado", {
+      proposalId: proposal.id,
+      vehicleId: proposal.targetVehicleId,
+      buyerId: proposal.buyerId,
       de: previousStatus,
       para: dto.status,
     });

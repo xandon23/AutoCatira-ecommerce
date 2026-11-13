@@ -11,6 +11,7 @@ import VehicleImage from "../models/VehicleImage";
 
 import { ICreateReview } from "../types";
 import { logger } from "../utils/logger";
+import { publishEvent } from "../events/eventPublisher";
 
 export default class ReviewController {
   static async create(req: AuthRequest, res: Response): Promise<Response> {
@@ -69,6 +70,13 @@ export default class ReviewController {
       logger.info("avaliacao.criada", {
         reviewId: review.id,
         proposalId,
+        rating: review.rating,
+      });
+
+      await publishEvent("avaliacao.criada", {
+        reviewId: review.id,
+        proposalId,
+        reviewedId: String(reviewedId),
         rating: review.rating,
       });
 

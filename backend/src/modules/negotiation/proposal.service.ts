@@ -11,11 +11,13 @@ import {
   UpdateProposalStatusDTO,
 } from "./dtos/proposal.dto";
 
-const imagesInclude = {
+// Função (e não objeto fixo): o Sequelize altera o objeto de include
+// ao montar a consulta, então cada uso precisa de uma cópia nova.
+const imagesInclude = () => ({
   model: VehicleImage,
   as: "images",
   attributes: ["id", "url"],
-};
+});
 
 // Regras de negócio das propostas (Aggregate "Proposta").
 export default class ProposalService {
@@ -157,7 +159,7 @@ export default class ProposalService {
           attributes: ["id"],
           required: true,
         },
-        imagesInclude,
+        imagesInclude(),
       ],
       order: [["createdAt", "DESC"]],
     });
@@ -186,7 +188,7 @@ export default class ProposalService {
       where: { targetVehicleId: vehicleId },
       include: [
         { model: User, as: "buyer", attributes: ["name"] },
-        { model: Vehicle, as: "offeredVehicle", include: [imagesInclude] },
+        { model: Vehicle, as: "offeredVehicle", include: [imagesInclude()] },
       ],
       order: [["createdAt", "DESC"]],
     });
@@ -227,10 +229,10 @@ export default class ProposalService {
           model: Vehicle,
           as: "targetVehicle",
           where: { userId: sellerId },
-          include: [imagesInclude],
+          include: [imagesInclude()],
         },
         { model: User, as: "buyer", attributes: ["name", "phone", "email"] },
-        { model: Vehicle, as: "offeredVehicle", include: [imagesInclude] },
+        { model: Vehicle, as: "offeredVehicle", include: [imagesInclude()] },
       ],
       order: [["updatedAt", "DESC"]],
     });
@@ -247,10 +249,10 @@ export default class ProposalService {
           as: "targetVehicle",
           include: [
             { model: User, as: "user", attributes: ["name", "phone"] },
-            imagesInclude,
+            imagesInclude(),
           ],
         },
-        { model: Vehicle, as: "offeredVehicle", include: [imagesInclude] },
+        { model: Vehicle, as: "offeredVehicle", include: [imagesInclude()] },
       ],
       order: [["createdAt", "DESC"]],
     });

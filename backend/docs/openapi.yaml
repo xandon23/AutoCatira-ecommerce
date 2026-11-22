@@ -1,0 +1,484 @@
+openapi: 3.0.3
+info:
+  title: AutoCatira API
+  version: 3.0.0
+  description: |
+    API do AutoCatira, marketplace de veículos com propostas em dinheiro e/ou
+    com veículo na troca. Rotas protegidas usam JWT no header
+    `Authorization: Bearer <token>`.
+
+    Toda resposta traz o header `X-Request-Id`, que identifica a requisição
+    nos logs. As rotas de listagem e detalhe de veículos trazem `X-Cache`
+    (HIT, MISS ou BYPASS).
+servers:
+  - url: /api
+    description: Via Nginx (Docker Compose)
+  - url: http://localhost:3333
+    description: Backend direto (desenvolvimento)
+tags:
+  - name: Saúde
+  - name: Autenticação
+  - name: Usuários
+  - name: Veículos
+  - name: Propostas e Negociação
+  - name: Avaliações
+  - name: Administração
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  headers:
+    XCache:
+      description: Resultado do cache Redis
+      schema: { type: string, enum: [HIT, MISS, BYPASS] }
+  responses:
+    Erro:
+      description: Erro com mensagem
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Erro' }
+  schemas:
+    Erro:
+      type: object
+      properties:
+        error: { type: string, example: Veículo não encontrado }
+    Health:
+      type: object
+      properties:
+        status: { type: string, enum: [up, degraded, down] }
+        uptimeSeconds: { type: integer }
+        checks:
+          type: object
+          properties:
+            api: { type: string, example: up }
+            mysql: { type: string, example: up }
+            redis: { type: string, example: up }
+        durationMs: { type: integer }
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, example: comprador@email.com }
+        password: { type: string, example: Senha123 }
+    LoginResponse:
+      type: object
+      properties:
+        message: { type: string }
+        token: { type: string }
+        user: { $ref: '#/components/schemas/UsuarioResumo' }
+    UsuarioResumo:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [USER, ADMIN] }
+    CadastroUsuario:
+      type: object
+      required: [name, email, password, cpf, birthDate, phone]
+      properties:
+        name: { type: string, example: Alexandre Gonçalves }
+        email: { type: string, format: email }
+        password: { type: string, description: Mínimo 8 caracteres com letras e números }
+        cpf: { type: string, example: '529.982.247-25' }
+        birthDate: { type: string, format: date, description: Usuário deve ser maior de idade }
+        phone: { type: string, example: '(44) 99999-0000' }
+    VeiculoInput:
+      type: object
+      required: [brand, model, manufactureYear, modelYear, engine, transmission, location, mileage, price, description]
+      properties:
+        brand: { type: string, example: Volkswagen }
+        model: { type: string, example: Gol }
+        manufactureYear: { type: integer, example: 2021 }
+        modelYear: { type: integer, example: 2022, description: Igual ao ano de fabricação ou +1 }
+        engine: { type: string, example: '1.0' }
+        transmission: { type: string, example: Manual }
+        location: { type: string, example: Campo Mourão - PR }
+        mileage: { type: integer, example: 45000 }
+        price: { type: number, example: 62000 }
+        description: { type: string }
+        features: { type: array, items: { type: string }, example: [Ar-condicionado, Direção elétrica] }
+    Veiculo:
+      allOf:
+        - $ref: '#/components/schemas/VeiculoInput'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            status: { type: string, enum: [available, sold] }
+            userId: { type: string, format: uuid }
+            user:
+              type: object
+              description: Apenas o nome do anunciante (dados de contato só na negociação)
+              properties:
+                name: { type: string }
+            images:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string }
+                  url: { type: string, example: /uploads/2b1f...jpg }
+    ListaVeiculos:
+      type: object
+      properties:
+        total: { type: integer }
+        totalPages: { type: integer }
+        vehicles:
+          type: array
+          items: { $ref: '#/components/schemas/Veiculo' }
+    PropostaInput:
+      type: object
+      required: [targetVehicleId]
+      properties:
+        targetVehicleId: { type: string, format: uuid }
+        cashOffer: { type: number, example: 15000, description: 'Obrigatório e > 0 sem troca; >= 0 com troca (padrão 0)' }
+        offeredVehicleId: { type: string, format: uuid, nullable: true, description: Veículo do comprador oferecido na troca }
+        message: { type: string, maxLength: 500 }
+    Proposta:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        targetVehicleId: { type: string, format: uuid }
+        offeredVehicleId: { type: string, format: uuid, nullable: true }
+        buyerId: { type: string, format: uuid }
+        cashOffer: { type: number }
+        message: { type: string, nullable: true }
+        status: { type: string, enum: [PENDING, IN_NEGOTIATION, ACCEPTED, REJECTED] }
+    DecisaoProposta:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [IN_NEGOTIATION, REJECTED]
+          description: 'PENDING -> IN_NEGOTIATION ou REJECTED; IN_NEGOTIATION -> REJECTED'
+    AvaliacaoInput:
+      type: object
+      required: [proposalId, rating]
+      properties:
+        proposalId: { type: string, format: uuid, description: Negociação concluída (ACCEPTED) }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string, maxLength: 500 }
+
+paths:
+  /health:
+    get:
+      tags: [Saúde]
+      summary: Saúde da API, MySQL e Redis
+      responses:
+        '200':
+          description: MySQL disponível (Redis fora = status "degraded")
+          content: { application/json: { schema: { $ref: '#/components/schemas/Health' } } }
+        '503':
+          description: MySQL indisponível
+          content: { application/json: { schema: { $ref: '#/components/schemas/Health' } } }
+
+  /auth/login:
+    post:
+      tags: [Autenticação]
+      summary: Login com e-mail e senha
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/LoginInput' } } }
+      responses:
+        '200':
+          description: Token JWT (validade de 1 dia)
+          content: { application/json: { schema: { $ref: '#/components/schemas/LoginResponse' } } }
+        '400': { $ref: '#/components/responses/Erro' }
+        '401': { $ref: '#/components/responses/Erro' }
+
+  /users:
+    post:
+      tags: [Usuários]
+      summary: Cadastro de usuário
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CadastroUsuario' } } }
+      responses:
+        '201': { description: Usuário criado }
+        '400': { $ref: '#/components/responses/Erro' }
+        '403': { description: Menor de idade }
+        '409': { description: E-mail ou CPF já cadastrados }
+  /users/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      tags: [Usuários]
+      summary: Dados do usuário (completos só para o próprio usuário ou admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Usuário }
+        '404': { $ref: '#/components/responses/Erro' }
+    put:
+      tags: [Usuários]
+      summary: Atualiza nome e telefone do próprio usuário
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                phone: { type: string }
+      responses:
+        '200': { description: Atualizado }
+        '403': { $ref: '#/components/responses/Erro' }
+
+  /vehicles:
+    get:
+      tags: [Veículos]
+      summary: Lista pública de veículos disponíveis (com cache Redis, TTL 60s)
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 10 } }
+        - { name: includeSold, in: query, schema: { type: boolean, default: false } }
+      responses:
+        '200':
+          description: Página de veículos
+          headers: { X-Cache: { $ref: '#/components/headers/XCache' } }
+          content: { application/json: { schema: { $ref: '#/components/schemas/ListaVeiculos' } } }
+    post:
+      tags: [Veículos]
+      summary: Cria anúncio (invalida o cache da listagem)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/VeiculoInput' } } }
+      responses:
+        '201': { description: Anunciado com sucesso }
+        '400': { $ref: '#/components/responses/Erro' }
+  /vehicles/mine:
+    get:
+      tags: [Veículos]
+      summary: Anúncios ativos do usuário logado
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Lista de veículos }
+  /vehicles/sold:
+    get:
+      tags: [Veículos]
+      summary: Veículos vendidos pelo usuário logado
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Lista de veículos vendidos }
+  /vehicles/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      tags: [Veículos]
+      summary: Detalhe público do veículo (com cache Redis, TTL 300s)
+      responses:
+        '200':
+          description: Veículo
+          headers: { X-Cache: { $ref: '#/components/headers/XCache' } }
+          content: { application/json: { schema: { $ref: '#/components/schemas/Veiculo' } } }
+        '404': { $ref: '#/components/responses/Erro' }
+    put:
+      tags: [Veículos]
+      summary: Edita anúncio do próprio usuário (bloqueado se vendido)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/VeiculoInput' } } }
+      responses:
+        '200': { description: Anúncio atualizado }
+        '400': { $ref: '#/components/responses/Erro' }
+        '403': { $ref: '#/components/responses/Erro' }
+    delete:
+      tags: [Veículos]
+      summary: Exclui anúncio (bloqueado se vendido ou com negociação em andamento)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: Excluído }
+        '400': { $ref: '#/components/responses/Erro' }
+        '403': { $ref: '#/components/responses/Erro' }
+  /vehicles/{id}/images:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [Veículos]
+      summary: Envia imagem do anúncio (Multer - JPG, JPEG, PNG ou WEBP até 5 MB)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image: { type: string, format: binary }
+      responses:
+        '201': { description: Imagem salva com nome único }
+        '400': { description: Formato inválido }
+        '413': { description: Arquivo maior que 5 MB }
+  /vehicles/{id}/sell:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    patch:
+      tags: [Propostas e Negociação]
+      summary: Finaliza a venda (transação; rejeita propostas ligadas aos veículos vendidos; publica veiculo.vendido)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [buyerId]
+              properties:
+                buyerId: { type: string, format: uuid }
+      responses:
+        '200': { description: Venda finalizada }
+        '400': { $ref: '#/components/responses/Erro' }
+        '403': { $ref: '#/components/responses/Erro' }
+
+  /proposals:
+    post:
+      tags: [Propostas e Negociação]
+      summary: Envia proposta (dinheiro e/ou veículo na troca; publica proposta.criada)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/PropostaInput' } } }
+      responses:
+        '201': { description: Proposta enviada }
+        '400': { $ref: '#/components/responses/Erro' }
+        '403': { description: Veículo da troca não pertence ao comprador }
+        '409': { description: Já existe proposta ativa do comprador para o veículo }
+  /proposals/mine:
+    get:
+      tags: [Propostas e Negociação]
+      summary: Propostas enviadas pelo usuário (telefone do vendedor só após aceite)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Lista de propostas }
+  /proposals/received/vehicles:
+    get:
+      tags: [Propostas e Negociação]
+      summary: Anúncios do usuário com propostas pendentes
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Lista de veículos com contador de propostas }
+  /proposals/vehicle/{vehicleId}:
+    parameters:
+      - { name: vehicleId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [Propostas e Negociação]
+      summary: Propostas recebidas por um anúncio (somente o dono)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Lista de propostas }
+        '403': { $ref: '#/components/responses/Erro' }
+  /proposals/negotiations:
+    get:
+      tags: [Propostas e Negociação]
+      summary: Negociações em andamento do vendedor
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Lista de propostas IN_NEGOTIATION }
+  /proposals/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      tags: [Propostas e Negociação]
+      summary: Detalhe da proposta (somente comprador ou vendedor)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Proposta
+          content: { application/json: { schema: { $ref: '#/components/schemas/Proposta' } } }
+        '403': { $ref: '#/components/responses/Erro' }
+        '404': { $ref: '#/components/responses/Erro' }
+  /proposals/{id}/status:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    patch:
+      tags: [Propostas e Negociação]
+      summary: Vendedor aceita (abre negociação e libera contato) ou recusa
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/DecisaoProposta' } } }
+      responses:
+        '200':
+          description: Status atualizado; em IN_NEGOTIATION retorna o contato do comprador
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  contact:
+                    type: object
+                    properties:
+                      name: { type: string }
+                      phone: { type: string }
+        '400': { $ref: '#/components/responses/Erro' }
+        '403': { $ref: '#/components/responses/Erro' }
+
+  /reviews:
+    post:
+      tags: [Avaliações]
+      summary: Avalia a outra parte de uma negociação concluída (publica avaliacao.criada)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/AvaliacaoInput' } } }
+      responses:
+        '201': { description: Avaliação registrada }
+        '403': { description: Não participou da negociação }
+        '409': { description: Negociação já avaliada por este usuário }
+  /reviews/pending:
+    get:
+      tags: [Avaliações]
+      summary: Negociações concluídas ainda não avaliadas pelo usuário
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Lista }
+  /reviews/me:
+    get:
+      tags: [Avaliações]
+      summary: Avaliações recebidas pelo usuário logado
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Lista }
+  /reviews/user/{userId}:
+    parameters:
+      - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [Avaliações]
+      summary: Avaliações públicas de um usuário
+      responses:
+        '200': { description: Lista }
+
+  /admin/users:
+    get:
+      tags: [Administração]
+      summary: Lista usuários (somente ADMIN, perfil conferido no banco)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Lista de usuários sem senha }
+        '403': { $ref: '#/components/responses/Erro' }
+  /admin/users/{id}/role:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    patch:
+      tags: [Administração]
+      summary: Altera perfil USER/ADMIN de outro usuário
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role: { type: string, enum: [USER, ADMIN] }
+      responses:
+        '200': { description: Perfil atualizado }
+        '400': { $ref: '#/components/responses/Erro' }
+        '403': { $ref: '#/components/responses/Erro' }

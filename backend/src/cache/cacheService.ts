@@ -1,9 +1,13 @@
 import { isRedisReady, redisClient } from "../config/redis";
 import { logger } from "../utils/logger";
+import { CircuitBreaker } from "../utils/circuitBreaker";
 
 // Tempo máximo de espera por uma operação no Redis. Se passar disso,
 // a API segue sem cache em vez de deixar o usuário esperando.
 const OPERATION_TIMEOUT_MS = 300;
+
+// 3 falhas seguidas no Redis abrem o circuito por 30 segundos.
+export const redisBreaker = new CircuitBreaker("redis", 3, 30000);
 
 export const CACHE_TTL = {
   vehicleList: 60, // segundos
@@ -43,14 +47,21 @@ export async function getOrSet<T>(
     return { data: await loader(), cache: "BYPASS" };
   }
 
+  if (!redisBreaker.canRequest()) {
+    logger.warn("cache.bypass", { key, motivo: "circuito_aberto" });
+    return { data: await loader(), cache: "BYPASS" };
+  }
+
   try {
     const cached = await withTimeout(redisClient.get(key));
+    redisBreaker.onSuccess();
 
     if (cached) {
       logger.info("cache.hit", { key });
       return { data: JSON.parse(cached) as T, cache: "HIT" };
     }
   } catch (error) {
+    redisBreaker.onFailure();
     logger.warn("cache.erro_leitura", {
       key,
       error: error instanceof Error ? error.message : String(error),
@@ -67,6 +78,7 @@ export async function getOrSet<T>(
       redisClient.set(key, JSON.stringify(data), { EX: ttlSeconds }),
     );
   } catch (error) {
+    redisBreaker.onFailure();
     logger.warn("cache.erro_gravacao", {
       key,
       error: error instanceof Error ? error.message : String(error),
@@ -81,7 +93,7 @@ export async function invalidate(
   keys: string[] = [],
   prefixes: string[] = [],
 ): Promise<void> {
-  if (!isRedisReady()) return;
+  if (!isRedisReady() || !redisBreaker.canRequest()) return;
 
   try {
     const toDelete = [...keys];
@@ -101,6 +113,7 @@ export async function invalidate(
 
     logger.info("cache.invalidado", { chaves: toDelete.length, prefixes });
   } catch (error) {
+    redisBreaker.onFailure();
     logger.warn("cache.erro_invalidacao", {
       error: error instanceof Error ? error.message : String(error),
     });

@@ -19,6 +19,7 @@ COPY --from=build /app/node_modules ./node_modules
 RUN npm prune --omit=dev
 
 COPY --from=build /app/dist ./dist
+COPY docs ./docs
 RUN mkdir -p uploads
 
 EXPOSE 3333

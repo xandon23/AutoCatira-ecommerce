@@ -1,7 +1,3 @@
-import Proposal from "../../models/Proposal";
-import User from "../../models/User";
-import Vehicle from "../../models/Vehicle";
-import VehicleImage from "../../models/VehicleImage";
 import { AppError } from "../../utils/AppError";
 import { logger } from "../../utils/logger";
 import { publishEvent } from "../../events/eventPublisher";
@@ -10,19 +6,14 @@ import {
   CreateProposalDTO,
   UpdateProposalStatusDTO,
 } from "./dtos/proposal.dto";
+import { proposalRepository } from "./repositories/proposal.repository";
+import { negotiationVehicleRepository } from "./repositories/vehicle.repository";
 
-// Função (e não objeto fixo): o Sequelize altera o objeto de include
-// ao montar a consulta, então cada uso precisa de uma cópia nova.
-const imagesInclude = () => ({
-  model: VehicleImage,
-  as: "images",
-  attributes: ["id", "url"],
-});
-
-// Regras de negócio das propostas (Aggregate "Proposta").
+// Casos de uso e regras de negócio das propostas (Aggregate "Proposta").
+// Não acessa o banco diretamente: usa os repositories do módulo.
 export default class ProposalService {
   static async create(buyerId: string, dto: CreateProposalDTO) {
-    const vehicle = await Vehicle.findByPk(dto.targetVehicleId);
+    const vehicle = await negotiationVehicleRepository.findById(dto.targetVehicleId);
 
     if (!vehicle) throw new AppError("Veículo não encontrado.", 404);
 
@@ -48,13 +39,10 @@ export default class ProposalService {
       await ProposalService.validateTradeIn(dto.offeredVehicleId, buyerId);
     }
 
-    const activeProposal = await Proposal.findOne({
-      where: {
-        targetVehicleId: dto.targetVehicleId,
-        buyerId,
-        status: ["PENDING", "IN_NEGOTIATION"],
-      },
-    });
+    const activeProposal = await proposalRepository.findActiveByBuyerAndVehicle(
+      buyerId,
+      dto.targetVehicleId,
+    );
 
     if (activeProposal) {
       throw new AppError(
@@ -63,12 +51,11 @@ export default class ProposalService {
       );
     }
 
-    const proposal = await Proposal.create({
+    const proposal = await proposalRepository.create({
       targetVehicleId: dto.targetVehicleId,
       buyerId,
       cashOffer: dto.cashOffer,
       offeredVehicleId: dto.offeredVehicleId,
-      status: "PENDING",
       message: dto.message,
     });
 
@@ -96,9 +83,7 @@ export default class ProposalService {
     sellerId: string,
     dto: UpdateProposalStatusDTO,
   ): Promise<{ contact: BuyerContactDTO | null }> {
-    const proposal = await Proposal.findByPk(proposalId, {
-      include: [{ model: Vehicle, as: "targetVehicle" }],
-    });
+    const proposal = await proposalRepository.findByIdWithTargetVehicle(proposalId);
 
     if (!proposal) throw new AppError("Proposta não encontrada.", 404);
 
@@ -117,7 +102,7 @@ export default class ProposalService {
 
     const previousStatus = proposal.status;
 
-    await proposal.update({ status: dto.status });
+    await proposalRepository.updateStatus(proposal, dto.status);
 
     logger.info("proposta.status_alterado", {
       proposalId: proposal.id,
@@ -138,9 +123,7 @@ export default class ProposalService {
     }
 
     // Dados de contato só são liberados quando a negociação começa.
-    const buyer = await User.findByPk(proposal.buyerId, {
-      attributes: ["name", "phone"],
-    });
+    const buyer = await negotiationVehicleRepository.findBuyerContact(proposal.buyerId);
 
     return {
       contact: buyer ? { name: buyer.name, phone: buyer.phone } : null,
@@ -149,20 +132,8 @@ export default class ProposalService {
 
   // Anúncios do vendedor que têm propostas pendentes.
   static async listVehiclesWithPendingProposals(sellerId: string) {
-    const vehicles = await Vehicle.findAll({
-      where: { userId: sellerId },
-      include: [
-        {
-          model: Proposal,
-          as: "receivedProposals",
-          where: { status: "PENDING" },
-          attributes: ["id"],
-          required: true,
-        },
-        imagesInclude(),
-      ],
-      order: [["createdAt", "DESC"]],
-    });
+    const vehicles =
+      await negotiationVehicleRepository.findSellerVehiclesWithPendingProposals(sellerId);
 
     return vehicles.map((vehicle) => {
       const data = vehicle.get({ plain: true }) as any;
@@ -176,7 +147,7 @@ export default class ProposalService {
   }
 
   static async listByVehicle(vehicleId: string, sellerId: string) {
-    const vehicle = await Vehicle.findByPk(vehicleId);
+    const vehicle = await negotiationVehicleRepository.findById(vehicleId);
 
     if (!vehicle) throw new AppError("Veículo não encontrado.", 404);
 
@@ -184,29 +155,12 @@ export default class ProposalService {
       throw new AppError("Acesso negado.", 403);
     }
 
-    return Proposal.findAll({
-      where: { targetVehicleId: vehicleId },
-      include: [
-        { model: User, as: "buyer", attributes: ["name"] },
-        { model: Vehicle, as: "offeredVehicle", include: [imagesInclude()] },
-      ],
-      order: [["createdAt", "DESC"]],
-    });
+    return proposalRepository.findByTargetVehicle(vehicleId);
   }
 
   // Só comprador e vendedor da proposta podem vê-la.
   static async getById(proposalId: string, userId: string) {
-    const proposal = await Proposal.findByPk(proposalId, {
-      include: [
-        { model: User, as: "buyer", attributes: ["name", "phone", "email"] },
-        { model: Vehicle, as: "targetVehicle", attributes: ["id", "userId"] },
-        {
-          model: Vehicle,
-          as: "offeredVehicle",
-          include: [{ model: VehicleImage, as: "images" }],
-        },
-      ],
-    });
+    const proposal = await proposalRepository.findDetailedById(proposalId);
 
     if (!proposal) throw new AppError("Proposta não encontrada.", 404);
 
@@ -221,41 +175,14 @@ export default class ProposalService {
   }
 
   // Negociações em andamento em que o usuário é o vendedor.
-  static async listNegotiations(sellerId: string) {
-    return Proposal.findAll({
-      where: { status: "IN_NEGOTIATION" },
-      include: [
-        {
-          model: Vehicle,
-          as: "targetVehicle",
-          where: { userId: sellerId },
-          include: [imagesInclude()],
-        },
-        { model: User, as: "buyer", attributes: ["name", "phone", "email"] },
-        { model: Vehicle, as: "offeredVehicle", include: [imagesInclude()] },
-      ],
-      order: [["updatedAt", "DESC"]],
-    });
+  static listNegotiations(sellerId: string) {
+    return proposalRepository.findNegotiationsBySeller(sellerId);
   }
 
   // Propostas enviadas pelo comprador; telefone do vendedor só aparece
   // depois que a negociação começa.
   static async listSentByBuyer(buyerId: string) {
-    const proposals = await Proposal.findAll({
-      where: { buyerId },
-      include: [
-        {
-          model: Vehicle,
-          as: "targetVehicle",
-          include: [
-            { model: User, as: "user", attributes: ["name", "phone"] },
-            imagesInclude(),
-          ],
-        },
-        { model: Vehicle, as: "offeredVehicle", include: [imagesInclude()] },
-      ],
-      order: [["createdAt", "DESC"]],
-    });
+    const proposals = await proposalRepository.findSentByBuyer(buyerId);
 
     return proposals.map((proposal) => {
       const data = proposal.get({ plain: true }) as any;
@@ -275,7 +202,7 @@ export default class ProposalService {
     offeredVehicleId: string,
     buyerId: string,
   ): Promise<void> {
-    const offered = await Vehicle.findByPk(offeredVehicleId);
+    const offered = await negotiationVehicleRepository.findById(offeredVehicleId);
 
     if (!offered || String(offered.userId) !== String(buyerId)) {
       throw new AppError("O veículo deve ser seu.", 403);

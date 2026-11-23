@@ -1,16 +1,15 @@
-import { Op, Transaction } from "sequelize";
 import sequelize from "../../config/database";
-import Proposal from "../../models/Proposal";
-import Vehicle from "../../models/Vehicle";
 import { AppError } from "../../utils/AppError";
 import { logger } from "../../utils/logger";
 import { FinalizeSaleDTO } from "./dtos/proposal.dto";
 import { invalidate, cacheKeys } from "../../cache/cacheService";
 import { publishEvent } from "../../events/eventPublisher";
+import { proposalRepository } from "./repositories/proposal.repository";
+import { negotiationVehicleRepository } from "./repositories/vehicle.repository";
 
-// Finalização da venda: encerra a negociação vencedora, marca os
-// veículos envolvidos como vendidos e rejeita as demais propostas.
-// Tudo em uma única transação.
+// Serviço de domínio "Finalizar Venda": encerra a negociação vencedora,
+// marca os veículos envolvidos como vendidos e rejeita as demais
+// propostas. Tudo em uma única transação.
 export default class SaleService {
   static async finalize(
     vehicleId: string,
@@ -21,7 +20,7 @@ export default class SaleService {
     let rejectedCount = 0;
 
     await sequelize.transaction(async (t) => {
-      const vehicle = await Vehicle.findByPk(vehicleId, { transaction: t });
+      const vehicle = await negotiationVehicleRepository.findById(vehicleId, t);
 
       if (!vehicle) throw new AppError("Veículo não encontrado.", 404);
 
@@ -33,14 +32,11 @@ export default class SaleService {
         throw new AppError("Este veículo já consta como vendido.", 400);
       }
 
-      const winningProposal = await Proposal.findOne({
-        where: {
-          targetVehicleId: vehicleId,
-          buyerId: dto.buyerId,
-          status: "IN_NEGOTIATION",
-        },
-        transaction: t,
-      });
+      const winningProposal = await proposalRepository.findNegotiationWithBuyer(
+        vehicleId,
+        dto.buyerId,
+        t,
+      );
 
       if (!winningProposal) {
         throw new AppError(
@@ -49,25 +45,21 @@ export default class SaleService {
         );
       }
 
-      await vehicle.update(
-        { status: "sold", buyerId: dto.buyerId },
-        { transaction: t },
-      );
-
-      await winningProposal.update({ status: "ACCEPTED" }, { transaction: t });
+      await negotiationVehicleRepository.markAsSold(vehicle, dto.buyerId, t);
+      await proposalRepository.updateStatus(winningProposal, "ACCEPTED", t);
 
       // Veículos que saem do mercado com esta venda: o anunciado e,
       // se houver troca, o veículo oferecido pelo comprador.
       if (winningProposal.offeredVehicleId) {
         soldVehicleIds.push(winningProposal.offeredVehicleId);
-
-        await Vehicle.update(
-          { status: "sold", buyerId: sellerId },
-          { where: { id: winningProposal.offeredVehicleId }, transaction: t },
+        await negotiationVehicleRepository.markAsSoldById(
+          winningProposal.offeredVehicleId,
+          sellerId,
+          t,
         );
       }
 
-      rejectedCount = await SaleService.rejectRelatedProposals(
+      rejectedCount = await proposalRepository.rejectActiveInvolvingVehicles(
         soldVehicleIds,
         winningProposal.id,
         t,
@@ -95,30 +87,5 @@ export default class SaleService {
       comTroca: soldVehicleIds.length > 1,
       propostasRejeitadas: rejectedCount,
     });
-  }
-
-  // Rejeita qualquer outra proposta ativa que tenha um dos veículos
-  // vendidos como alvo ou como veículo oferecido na troca.
-  private static async rejectRelatedProposals(
-    vehicleIds: string[],
-    winningProposalId: string,
-    t: Transaction,
-  ): Promise<number> {
-    const [affected] = await Proposal.update(
-      { status: "REJECTED" },
-      {
-        where: {
-          id: { [Op.ne]: winningProposalId },
-          status: ["PENDING", "IN_NEGOTIATION"],
-          [Op.or]: [
-            { targetVehicleId: vehicleIds },
-            { offeredVehicleId: vehicleIds },
-          ],
-        },
-        transaction: t,
-      },
-    );
-
-    return affected;
   }
 }

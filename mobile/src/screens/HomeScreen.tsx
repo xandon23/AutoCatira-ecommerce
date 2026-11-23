@@ -19,6 +19,7 @@ import { VehicleCard } from "../components/VehicleCard";
 import { useAuth } from "../contexts/AuthContext";
 import { RootStackParamList } from "../navigation/types";
 import { getVehicles } from "../services/vehicleService";
+import { getMyNotifications } from "../services/notificationService";
 import { IVehicle } from "../types";
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -37,6 +38,22 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const [refreshing, setRefreshing] = useState(false);
 
   const [menuVisible, setMenuVisible] = useState(false);
+
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  // Ao abrir o menu, busca no microsserviço quantas notificações não lidas
+  // existem. Se ele estiver fora, o menu abre normalmente sem o contador.
+  useEffect(() => {
+    if (!menuVisible || !user) {
+      return;
+    }
+
+    getMyNotifications()
+      .then((items) =>
+        setUnreadNotifications(items.filter((n) => !n.readAt).length),
+      )
+      .catch(() => setUnreadNotifications(0));
+  }, [menuVisible, user]);
 
   const loadVehicles = useCallback(async () => {
     try {
@@ -198,6 +215,12 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
             navigation.navigate("Reviews");
           }}
+          onNotifications={() => {
+            setMenuVisible(false);
+
+            navigation.navigate("Notifications");
+          }}
+          unreadNotifications={unreadNotifications}
           isAdmin={user?.role === "ADMIN"}
           onAdmin={() => {
             setMenuVisible(false);

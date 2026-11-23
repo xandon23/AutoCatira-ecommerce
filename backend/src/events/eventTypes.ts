@@ -1,6 +1,3 @@
-// Eventos de domínio publicados pelo AutoCatira.
-// Cada evento vira um canal no Redis: "autocatira:eventos:<nome>".
-
 export const EVENT_CHANNEL_PREFIX = "autocatira:eventos:";
 
 export interface DomainEvents {
@@ -39,7 +36,7 @@ export interface DomainEvents {
 export type EventName = keyof DomainEvents;
 
 export interface EventEnvelope<E extends EventName = EventName> {
-  eventId: string; // identificador único (idempotência no consumidor)
+  eventId: string;
   event: E;
   occurredAt: string;
   requestId?: string;

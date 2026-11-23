@@ -6,7 +6,6 @@ import User from "../../models/User";
 import Proposal from "../../models/Proposal";
 import Review from "../../models/Review";
 
-// Aceita tanto DB_* (docker-compose) quanto MYSQL_* (arquivo .env).
 const sequelize = new Sequelize(
   (process.env.DB_NAME || process.env.MYSQL_DATABASE) as string,
   (process.env.DB_USER || process.env.MYSQL_USER) as string,

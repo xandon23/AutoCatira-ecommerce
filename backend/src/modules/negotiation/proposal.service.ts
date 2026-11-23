@@ -9,8 +9,6 @@ import {
 import { proposalRepository } from "./repositories/proposal.repository";
 import { negotiationVehicleRepository } from "./repositories/vehicle.repository";
 
-// Casos de uso e regras de negócio das propostas (Aggregate "Proposta").
-// Não acessa o banco diretamente: usa os repositories do módulo.
 export default class ProposalService {
   static async create(buyerId: string, dto: CreateProposalDTO) {
     const vehicle = await negotiationVehicleRepository.findById(dto.targetVehicleId);
@@ -78,7 +76,6 @@ export default class ProposalService {
     return proposal;
   }
 
-  // Vendedor aceita (abre negociação) ou recusa a proposta.
   static async updateStatus(
     proposalId: string,
     sellerId: string,
@@ -124,7 +121,6 @@ export default class ProposalService {
       return { contact: null };
     }
 
-    // Dados de contato só são liberados quando a negociação começa.
     const buyer = await negotiationVehicleRepository.findBuyerContact(proposal.buyerId);
 
     return {
@@ -132,7 +128,6 @@ export default class ProposalService {
     };
   }
 
-  // Anúncios do vendedor que têm propostas pendentes.
   static async listVehiclesWithPendingProposals(sellerId: string) {
     const vehicles =
       await negotiationVehicleRepository.findSellerVehiclesWithPendingProposals(sellerId);
@@ -160,7 +155,6 @@ export default class ProposalService {
     return proposalRepository.findByTargetVehicle(vehicleId);
   }
 
-  // Só comprador e vendedor da proposta podem vê-la.
   static async getById(proposalId: string, userId: string) {
     const proposal = await proposalRepository.findDetailedById(proposalId);
 
@@ -176,13 +170,10 @@ export default class ProposalService {
     return proposal;
   }
 
-  // Negociações em andamento em que o usuário é o vendedor.
   static listNegotiations(sellerId: string) {
     return proposalRepository.findNegotiationsBySeller(sellerId);
   }
 
-  // Propostas enviadas pelo comprador; telefone do vendedor só aparece
-  // depois que a negociação começa.
   static async listSentByBuyer(buyerId: string) {
     const proposals = await proposalRepository.findSentByBuyer(buyerId);
 

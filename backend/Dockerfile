@@ -1,4 +1,3 @@
-# ---------- Etapa 1: build (compila o TypeScript) ----------
 FROM node:22 AS build
 WORKDIR /app
 
@@ -9,7 +8,6 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-# ---------- Etapa 2: imagem final, só com o necessário ----------
 FROM node:22-slim
 ENV NODE_ENV=production
 WORKDIR /app

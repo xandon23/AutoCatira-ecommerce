@@ -21,7 +21,6 @@ router.get("/:id", VehicleController.getById);
 router.post("/", authMiddleware, VehicleController.create);
 router.put("/:id", authMiddleware, VehicleController.update);
 router.delete("/:id", authMiddleware, VehicleController.delete);
-// Finalização da venda pertence ao contexto de Negociação.
 router.patch("/:id/sell", authMiddleware, ProposalController.finalizeSale);
 
 router.post(

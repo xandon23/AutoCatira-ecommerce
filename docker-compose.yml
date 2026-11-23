@@ -11,6 +11,8 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    # ports:
+    #   - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
@@ -22,9 +24,6 @@ services:
     networks:
       - autocatira_network
 
-  # ----------------------------------------
-  # CACHE E MENSAGERIA (Redis)
-  # ----------------------------------------
   redis:
     image: redis:7-alpine
     container_name: autocatira_redis
@@ -39,7 +38,7 @@ services:
       - autocatira_network
 
   # ----------------------------------------
-  # BACK-END (API Node.js) - acessado somente via Nginx
+  # BACK-END (API Node.js)
   # ----------------------------------------
   backend:
     build: ./backend
@@ -71,11 +70,6 @@ services:
     networks:
       - autocatira_network
 
-  # ----------------------------------------
-  # MICROSSERVIÇO DE NOTIFICAÇÕES + BANCO PRÓPRIO
-  # Consome os eventos do Redis (assíncrono), valida usuários na API
-  # principal via HTTP com cache (síncrono) e grava em banco próprio.
-  # ----------------------------------------
   notification-db:
     image: mysql:8.0
     container_name: autocatira_notification_db
@@ -132,6 +126,8 @@ services:
     build: ./frontend
     container_name: autocatira_frontend
     restart: always
+    # ports:
+    #  - "3000:3000"
     environment:
       - REACT_APP_API_URL=/api
     depends_on:
@@ -140,14 +136,14 @@ services:
       - autocatira_network
 
   # ----------------------------------------
-  # NGINX (proxy reverso - única porta aberta)
+  # NGINX
   # ----------------------------------------
   nginx:
     image: nginx:alpine
     container_name: autocatira_nginx
     restart: always
     ports:
-      - "80:80"
+      - "80:80" # Única porta aberta para o mundo real!
       - "443:443"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro

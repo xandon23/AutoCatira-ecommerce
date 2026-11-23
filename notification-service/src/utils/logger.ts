@@ -1,7 +1,5 @@
 import { AsyncLocalStorage } from "async_hooks";
 
-// Mesmo formato de log da API principal (JSON + requestId), com o campo
-// "service" para diferenciar de onde a linha veio.
 export const requestContext = new AsyncLocalStorage<{ requestId: string }>();
 
 type Level = "info" | "warn" | "error";

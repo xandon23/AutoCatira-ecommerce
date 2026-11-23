@@ -2,7 +2,6 @@ import { DataTypes, Model, Op } from "sequelize";
 import { sequelize } from "../config/database";
 import { NotificationDraft, NotificationStatus } from "../domain/notification";
 
-// Camada de acesso a dados: só este arquivo conhece o banco.
 export class NotificationModel extends Model {
   declare id: string;
   declare eventId: string;
@@ -44,7 +43,6 @@ NotificationModel.init(
     sequelize,
     tableName: "notifications",
     indexes: [
-      // Idempotência: o mesmo evento nunca gera duas notificações para o mesmo usuário.
       { unique: true, fields: ["eventId", "userId", "type"] },
       { fields: ["userId", "status"] },
     ],

@@ -17,8 +17,6 @@ function minLevel(): LogLevel {
   return configured && configured in levelOrder ? configured : "info";
 }
 
-// Logger estruturado: cada linha é um JSON com data, nível, evento,
-// ID da requisição e dados extras. Facilita filtrar e seguir fluxos.
 function write(level: LogLevel, event: string, meta: LogMeta = {}): void {
   if (levelOrder[level] < levelOrder[minLevel()]) return;
 

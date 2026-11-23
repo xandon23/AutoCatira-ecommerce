@@ -15,7 +15,6 @@ interface AuthRequest extends Request {
 export const app = express();
 app.use(express.json());
 
-// Log de cada requisição com requestId (mesmo padrão da API principal).
 app.use((req, res, next) => {
   const requestId = (req.headers["x-request-id"] as string) || randomUUID();
   res.setHeader("X-Request-Id", requestId);
@@ -30,7 +29,6 @@ app.use((req, res, next) => {
   });
 });
 
-// Mesmo JWT emitido pela API principal (segredo compartilhado).
 function auth(req: AuthRequest, res: Response, next: NextFunction) {
   const [scheme, token] = (req.headers.authorization || "").split(" ");
   if (!/^Bearer$/i.test(scheme || "") || !token) {
@@ -58,7 +56,6 @@ app.get("/health", async (req, res) => {
   });
 });
 
-// Notificações do usuário logado.
 app.get("/me", auth, async (req: AuthRequest, res) => {
   const items = await notificationService.listForUser(req.userId as string);
   res.json(items);

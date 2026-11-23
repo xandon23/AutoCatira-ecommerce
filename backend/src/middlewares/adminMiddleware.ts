@@ -3,8 +3,6 @@ import { AuthRequest } from "./authMiddleware";
 import User from "../models/User";
 import { logger } from "../utils/logger";
 
-// O perfil é conferido no banco a cada requisição: se um administrador
-// for rebaixado, perde o acesso na hora, sem esperar o token expirar.
 export async function adminMiddleware(
   req: AuthRequest,
   res: Response,

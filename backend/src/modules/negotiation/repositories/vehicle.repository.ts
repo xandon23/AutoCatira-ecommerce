@@ -4,8 +4,6 @@ import User from "../../../models/User";
 import Vehicle from "../../../models/Vehicle";
 import VehicleImage from "../../../models/VehicleImage";
 
-// Acesso aos dados de veículos e usuários de que o contexto de
-// Negociação precisa (o Catálogo continua sendo o dono desses dados).
 export const negotiationVehicleRepository = {
   findById(id: string, t?: Transaction) {
     return Vehicle.findByPk(id, { transaction: t });

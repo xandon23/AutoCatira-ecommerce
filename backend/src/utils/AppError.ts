@@ -1,5 +1,3 @@
-// Erro de negócio com código HTTP. Lançado pelas regras da aplicação
-// e convertido em resposta pelo tratamento de erros centralizado.
 export class AppError extends Error {
   public readonly statusCode: number;
 

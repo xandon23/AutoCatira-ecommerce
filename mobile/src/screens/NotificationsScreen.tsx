@@ -59,8 +59,6 @@ export function NotificationsScreen() {
       setNotifications(data);
       setUnavailable(false);
     } catch (error) {
-      // O microsserviço é independente: se ele estiver fora, o resto do
-      // app continua funcionando e só esta tela mostra o aviso.
       console.log("Erro ao carregar notificações:", error);
       setUnavailable(true);
     } finally {
@@ -75,7 +73,6 @@ export function NotificationsScreen() {
     }, [loadNotifications]),
   );
 
-  // Leva o usuário para a tela relacionada à notificação.
   function openRelatedScreen(item: INotification) {
     switch (item.type) {
       case "NOVA_PROPOSTA":
@@ -103,7 +100,6 @@ export function NotificationsScreen() {
 
   function handlePress(item: INotification) {
     if (!item.readAt) {
-      // Marca como lida na tela imediatamente e confirma no servidor.
       setNotifications((current) =>
         current.map((n) =>
           n.id === item.id ? { ...n, readAt: new Date().toISOString() } : n,

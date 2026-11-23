@@ -17,7 +17,6 @@ async function start() {
   redisClient.connect().catch((error) => logger.warn("redis.indisponivel", { error: errorMessage(error) }));
   startEventConsumer().catch((error) => logger.warn("evento.assinante_indisponivel", { error: errorMessage(error) }));
 
-  // Reconciliação periódica das notificações pendentes (consistência eventual).
   const timer = setInterval(() => notificationService.reconcilePending(), env.reconcileIntervalMs);
 
   const server = app.listen(env.port, () => logger.info("servidor.iniciado", { port: env.port }));

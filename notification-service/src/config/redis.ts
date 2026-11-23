@@ -7,10 +7,8 @@ const socket = {
   reconnectStrategy: (retries: number) => Math.min(retries * 200, 5000),
 };
 
-// Cliente para cache (validação de usuários).
 export const redisClient = createClient({ url: env.redisUrl, socket });
 
-// Conexão exclusiva para assinar os canais de eventos (exigência do Pub/Sub).
 export const redisSubscriber = createClient({ url: env.redisUrl, socket });
 
 let lastError = 0;

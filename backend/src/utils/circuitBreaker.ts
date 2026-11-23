@@ -2,12 +2,6 @@ import { logger } from "./logger";
 
 type CircuitState = "CLOSED" | "OPEN" | "HALF_OPEN";
 
-// Circuit breaker simples:
-// - CLOSED: operações normais; falhas são contadas.
-// - OPEN: após N falhas seguidas, para de chamar o serviço por um tempo
-//   (a API usa o fallback direto, sem esperar timeouts).
-// - HALF_OPEN: passado o tempo, deixa uma tentativa passar; se der certo,
-//   volta a CLOSED; se falhar, abre de novo.
 export class CircuitBreaker {
   private state: CircuitState = "CLOSED";
   private failures = 0;

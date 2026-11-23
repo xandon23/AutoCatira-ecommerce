@@ -15,8 +15,6 @@ function withTimeout<T>(promise: Promise<T>): Promise<T> {
   ]);
 }
 
-// Verifica a saúde da API e das dependências.
-// MySQL é essencial (503 se cair); Redis é opcional (status "degradado").
 router.get("/", async (req, res) => {
   const started = Date.now();
 

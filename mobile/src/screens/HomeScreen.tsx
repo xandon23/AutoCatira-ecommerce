@@ -41,8 +41,6 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-  // Ao abrir o menu, busca no microsserviço quantas notificações não lidas
-  // existem. Se ele estiver fora, o menu abre normalmente sem o contador.
   useEffect(() => {
     if (!menuVisible || !user) {
       return;

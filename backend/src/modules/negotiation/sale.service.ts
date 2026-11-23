@@ -7,9 +7,6 @@ import { publishEvent } from "../../events/eventPublisher";
 import { proposalRepository } from "./repositories/proposal.repository";
 import { negotiationVehicleRepository } from "./repositories/vehicle.repository";
 
-// Serviço de domínio "Finalizar Venda": encerra a negociação vencedora,
-// marca os veículos envolvidos como vendidos e rejeita as demais
-// propostas. Tudo em uma única transação.
 export default class SaleService {
   static async finalize(
     vehicleId: string,
@@ -51,8 +48,6 @@ export default class SaleService {
       await negotiationVehicleRepository.markAsSold(vehicle, dto.buyerId, t);
       await proposalRepository.updateStatus(winningProposal, "ACCEPTED", t);
 
-      // Veículos que saem do mercado com esta venda: o anunciado e,
-      // se houver troca, o veículo oferecido pelo comprador.
       if (winningProposal.offeredVehicleId) {
         soldVehicleIds.push(winningProposal.offeredVehicleId);
         await negotiationVehicleRepository.markAsSoldById(
@@ -77,12 +72,10 @@ export default class SaleService {
       });
     });
 
-    // Após a venda confirmada, os dados em cache ficam desatualizados.
     await invalidate(soldVehicleIds.map(cacheKeys.vehicleDetail), [
       cacheKeys.vehicleListPrefix,
     ]);
 
-    // Evento publicado só depois da transação confirmada.
     await publishEvent("veiculo.vendido", {
       vehicleId,
       vehicleTitle,

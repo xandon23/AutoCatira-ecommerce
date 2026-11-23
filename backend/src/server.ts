@@ -9,9 +9,6 @@ const MAX_DB_ATTEMPTS = 10;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Retry com backoff exponencial: se o MySQL ainda não estiver pronto,
-// tenta de novo esperando 1s, 2s, 4s... (máximo 15s). Após 10 tentativas,
-// encerra o processo para o Docker reiniciar o container.
 async function connectDatabase(): Promise<void> {
   for (let attempt = 1; attempt <= MAX_DB_ATTEMPTS; attempt++) {
     try {
@@ -32,8 +29,6 @@ async function connectDatabase(): Promise<void> {
   }
 }
 
-// Encerramento gracioso: para de aceitar requisições, termina as que
-// estão em andamento e fecha as conexões com MySQL e Redis.
 function setupGracefulShutdown(server: Server): void {
   const shutdown = (signal: string) => {
     logger.info("servidor.encerrando", { signal });
@@ -55,7 +50,6 @@ function setupGracefulShutdown(server: Server): void {
 }
 
 async function start(): Promise<void> {
-  // Redis conecta em paralelo e não impede a API de subir.
   connectRedis();
 
   try {

@@ -9,9 +9,6 @@ import {
   EventName,
 } from "./eventTypes";
 
-// Publica um evento no Redis Pub/Sub. Quem consome é o microsserviço de
-// notificações (notification-service), em outro processo/container. Falha na publicação nunca derruba
-// a operação principal (a proposta/venda já foi salva no banco).
 export async function publishEvent<E extends EventName>(
   event: E,
   data: DomainEvents[E],

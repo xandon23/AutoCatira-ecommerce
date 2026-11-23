@@ -11,7 +11,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------- 1. BUILD + TESTES DO BACKEND ----------
   backend:
     name: Backend - build e testes
     runs-on: ubuntu-latest
@@ -52,7 +51,6 @@ jobs:
       - name: Testes automatizados (Vitest + Supertest + MySQL)
         run: npm run test:run
 
-  # ---------- 2. MICROSSERVIÇO DE NOTIFICAÇÕES ----------
   notification-service:
     name: Notification service - build
     runs-on: ubuntu-latest
@@ -71,7 +69,6 @@ jobs:
       - name: Build (TypeScript)
         run: npm run build
 
-  # ---------- 3. CHECAGEM DO APP MOBILE ----------
   mobile:
     name: Mobile - checagem de tipos
     runs-on: ubuntu-latest
@@ -90,10 +87,6 @@ jobs:
       - name: TypeScript
         run: npx tsc --noEmit -p .
 
-  # ---------- 4. DEPLOY: IMAGENS DOCKER ----------
-  # Em todo push: valida que a imagem do backend é construída.
-  # Na main: publica no GitHub Container Registry com a tag do commit
-  # (permite rollback para qualquer versão anterior) e "latest".
   deploy:
     name: Deploy - imagens Docker
     runs-on: ubuntu-latest

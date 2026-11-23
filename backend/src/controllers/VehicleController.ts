@@ -43,7 +43,6 @@ export default class VehicleController {
 
   static async getAll(req: Request, res: Response): Promise<Response> {
     try {
-      // Paginação saneada: página >= 1 e no máximo 50 itens por página.
       const page = Math.max(1, Math.floor(Number(req.query.page)) || 1);
       const limit = Math.min(
         50,
@@ -309,7 +308,6 @@ export default class VehicleController {
         [Op.or]: [{ targetVehicleId: id }, { offeredVehicleId: id }],
       };
 
-      // Não exclui anúncio com negociação em andamento (como alvo ou troca).
       const activeNegotiation = await Proposal.count({
         where: { ...relatedToVehicle, status: ["IN_NEGOTIATION", "ACCEPTED"] },
         transaction: t,
@@ -322,7 +320,6 @@ export default class VehicleController {
         );
       }
 
-      // Propostas pendentes ou recusadas ligadas ao veículo saem junto.
       const removedProposals = await Proposal.destroy({
         where: { ...relatedToVehicle, status: ["PENDING", "REJECTED"] },
         transaction: t,
@@ -345,7 +342,6 @@ export default class VehicleController {
       return sendError(res, error, 500);
     }
   }
-
 
   private static validateVehicleData(d: IVehicle): void {
     const currentYear = new Date().getFullYear();
@@ -396,7 +392,6 @@ export default class VehicleController {
       throw new Error("Operação negada: Proprietário inválido|403");
     return v;
   }
-
 
   private static getIncludes(withPhone = false) {
     const userAttrs = withPhone ? ["name", "phone"] : ["name"];

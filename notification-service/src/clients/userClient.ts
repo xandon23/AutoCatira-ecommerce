@@ -18,10 +18,7 @@ const cacheKey = (id: string) => `notif:user:${id}`;
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-// Comunicação SÍNCRONA (HTTP) com a API principal para validar o usuário,
-// com cache-aside no Redis (TTL 5 min), timeout e retry com backoff.
 export async function findUser(userId: string, requestId?: string): Promise<UserLookup> {
-  // 1. Cache
   try {
     if (redisClient.isReady) {
       const cached = await redisClient.get(cacheKey(userId));
@@ -35,7 +32,6 @@ export async function findUser(userId: string, requestId?: string): Promise<User
     logger.warn("cache.erro_leitura", { error: errorMessage(error) });
   }
 
-  // 2. API principal (com retry)
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const response = await fetch(`${env.mainApiUrl}/internal/users/${encodeURIComponent(userId)}`, {

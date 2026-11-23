@@ -14,7 +14,6 @@ interface HttpError {
 
 const INTERNAL_ERROR_MESSAGE = "Erro interno do servidor.";
 
-// Converte qualquer erro em status HTTP + mensagem segura para o cliente.
 export function toHttpError(error: unknown, defaultStatus = 500): HttpError {
   if (error instanceof AppError) {
     return { status: error.statusCode, message: error.message };
@@ -39,7 +38,6 @@ export function toHttpError(error: unknown, defaultStatus = 500): HttpError {
   }
 
   if (error instanceof Error) {
-    // Formato legado "mensagem|status" usado pelos controllers.
     const [message, status] = error.message.split("|");
 
     if (status) {
@@ -54,7 +52,6 @@ export function toHttpError(error: unknown, defaultStatus = 500): HttpError {
   return { status: defaultStatus, message: INTERNAL_ERROR_MESSAGE };
 }
 
-// Envia a resposta de erro e registra no log com o nível adequado.
 export function sendError(
   res: Response,
   error: unknown,

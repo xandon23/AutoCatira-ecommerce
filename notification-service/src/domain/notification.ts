@@ -1,6 +1,3 @@
-// Domínio do contexto de Notificações: o que é uma notificação e qual
-// notificação cada evento de negócio gera. Não conhece banco nem HTTP.
-
 export type NotificationStatus = "PENDENTE" | "ENTREGUE" | "DESCARTADA";
 
 export interface EventEnvelope {
@@ -16,13 +13,11 @@ export interface NotificationDraft {
   type: string;
   title: string;
   message: string;
-  // Referências usadas pelo app para abrir a tela certa ao tocar.
   vehicleId: string | null;
   proposalId: string | null;
   vehicleTitle: string | null;
 }
 
-// Regra de negócio: para cada evento, quem deve ser avisado e com qual texto.
 export function notificationsFromEvent(envelope: EventEnvelope): NotificationDraft[] {
   const d = envelope.data;
   const vehicle = d.vehicleTitle ? `o ${d.vehicleTitle}` : "o seu anúncio";

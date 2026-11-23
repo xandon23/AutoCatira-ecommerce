@@ -5,7 +5,6 @@ import { logger, requestContext, errorMessage } from "../utils/logger";
 
 const CHANNEL_PATTERN = "autocatira:eventos:*";
 
-// Comunicação ASSÍNCRONA: assina os eventos publicados pela API principal.
 export async function startEventConsumer(): Promise<void> {
   await redisSubscriber.connect();
 

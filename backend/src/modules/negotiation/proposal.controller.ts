@@ -8,9 +8,6 @@ import {
   toUpdateProposalStatusDTO,
 } from "./dtos/proposal.dto";
 
-// Controller do contexto de Negociação: só traduz HTTP <-> service.
-// Erros lançados aqui são tratados pelo errorMiddleware (Express 5
-// encaminha automaticamente erros de funções async).
 export default class ProposalController {
   static async create(req: AuthRequest, res: Response): Promise<Response> {
     const dto = toCreateProposalDTO(req.body);

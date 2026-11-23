@@ -3,8 +3,6 @@ import { Request, Response, NextFunction } from "express";
 import { requestContext } from "../utils/requestContext";
 import { logger } from "../utils/logger";
 
-// Gera um ID por requisição, devolve no header X-Request-Id e registra
-// método, rota, status e tempo de resposta ao final.
 export function requestLogger(req: Request, res: Response, next: NextFunction) {
   const headerId = req.headers["x-request-id"];
   const requestId =

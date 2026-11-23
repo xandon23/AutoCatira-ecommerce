@@ -1,6 +1,5 @@
 import api from "./api";
 
-// Chamadas ao microsserviço de notificações (via Nginx em /api/notifications).
 export interface INotification {
   id: string;
   type: string;

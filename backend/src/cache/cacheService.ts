@@ -2,15 +2,12 @@ import { isRedisReady, redisClient } from "../config/redis";
 import { logger } from "../utils/logger";
 import { CircuitBreaker } from "../utils/circuitBreaker";
 
-// Tempo máximo de espera por uma operação no Redis. Se passar disso,
-// a API segue sem cache em vez de deixar o usuário esperando.
 const OPERATION_TIMEOUT_MS = 300;
 
-// 3 falhas seguidas no Redis abrem o circuito por 30 segundos.
 export const redisBreaker = new CircuitBreaker("redis", 3, 30000);
 
 export const CACHE_TTL = {
-  vehicleList: 60, // segundos
+  vehicleList: 60,
   vehicleDetail: 300,
 };
 
@@ -35,8 +32,6 @@ function withTimeout<T>(promise: Promise<T>): Promise<T> {
 
 export type CacheStatus = "HIT" | "MISS" | "BYPASS";
 
-// Padrão cache-aside: procura no Redis; se não achar, busca na fonte
-// (MySQL), grava no Redis com TTL e devolve. Sem Redis, vai direto à fonte.
 export async function getOrSet<T>(
   key: string,
   ttlSeconds: number,
@@ -88,7 +83,6 @@ export async function getOrSet<T>(
   return { data, cache: "MISS" };
 }
 
-// Remove chaves exatas e/ou todas as chaves que começam com um prefixo.
 export async function invalidate(
   keys: string[] = [],
   prefixes: string[] = [],
@@ -120,8 +114,6 @@ export async function invalidate(
   }
 }
 
-// Atalho: qualquer mudança em um veículo invalida o detalhe dele
-// e todas as páginas da listagem.
 export function invalidateVehicle(vehicleId?: string): Promise<void> {
   return invalidate(
     vehicleId ? [cacheKeys.vehicleDetail(vehicleId)] : [],

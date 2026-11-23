@@ -5,11 +5,6 @@ import Vehicle from "../../../models/Vehicle";
 import VehicleImage from "../../../models/VehicleImage";
 import { ProposalStatus } from "../../../types";
 
-// Repository de Propostas: única parte do contexto de Negociação que
-// conhece o ORM/banco. Os services só chamam estes métodos.
-
-// Função (e não objeto fixo): o Sequelize altera o objeto de include
-// ao montar a consulta, então cada uso precisa de uma cópia nova.
 const imagesInclude = () => ({
   model: VehicleImage,
   as: "images",
@@ -102,8 +97,6 @@ export const proposalRepository = {
     });
   },
 
-  // Rejeita as propostas ativas que tenham algum dos veículos como alvo
-  // ou como veículo oferecido na troca (exceto a proposta vencedora).
   async rejectActiveInvolvingVehicles(vehicleIds: string[], exceptProposalId: string, t?: Transaction) {
     const [affected] = await Proposal.update(
       { status: "REJECTED" },

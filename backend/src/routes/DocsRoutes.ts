@@ -5,9 +5,6 @@ const router = Router();
 
 const SPEC_PATH = path.resolve(process.cwd(), "docs", "openapi.yaml");
 
-// Página do Swagger UI (carregada de CDN, sem dependência no backend).
-// O caminho da especificação é relativo à página, então funciona tanto
-// em /docs quanto em /api/docs (atrás do Nginx).
 const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>

@@ -4,9 +4,7 @@ import { notificationRepository } from "../repositories/notificationRepository";
 import { findUser } from "../clients/userClient";
 import { logger, errorMessage } from "../utils/logger";
 
-// Casos de uso do microsserviço.
 export const notificationService = {
-  // Recebe um evento de domínio (assíncrono, via Redis) e gera as notificações.
   async handleEvent(envelope: EventEnvelope): Promise<void> {
     const drafts = notificationsFromEvent(envelope);
     const eventId = envelope.eventId ?? randomUUID();
@@ -30,9 +28,6 @@ export const notificationService = {
     }
   },
 
-  // Valida o destinatário na API principal (com cache) e decide o status.
-  // Se a API estiver fora, a notificação fica PENDENTE e é reprocessada
-  // depois: CONSISTÊNCIA EVENTUAL entre os dois serviços.
   async deliver(notificationId: string, userId: string, requestId?: string | null): Promise<void> {
     const lookup = await findUser(userId, requestId ?? undefined);
 
@@ -48,7 +43,6 @@ export const notificationService = {
     }
   },
 
-  // Rotina de reconciliação: tenta de novo as notificações pendentes.
   async reconcilePending(): Promise<void> {
     try {
       const pending = await notificationRepository.findPending();

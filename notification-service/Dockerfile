@@ -1,4 +1,3 @@
-# ---------- Etapa 1: build ----------
 FROM node:22 AS build
 WORKDIR /app
 COPY package*.json ./
@@ -7,7 +6,6 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-# ---------- Etapa 2: imagem final ----------
 FROM node:22-slim
 ENV NODE_ENV=production
 WORKDIR /app

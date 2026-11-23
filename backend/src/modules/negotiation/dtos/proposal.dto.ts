@@ -1,9 +1,5 @@
 import { AppError } from "../../../utils/AppError";
 
-// DTOs (Data Transfer Objects) do contexto de Negociação: definem e
-// validam o formato dos dados que entram pela API antes de chegar
-// às regras de negócio.
-
 export type ProposalDecision = "IN_NEGOTIATION" | "REJECTED";
 
 export interface CreateProposalDTO {
@@ -39,7 +35,6 @@ export function toCreateProposalDTO(body: unknown): CreateProposalDTO {
     throw new AppError("Veículo da proposta não informado.", 400);
   }
 
-  // Proposta só com veículo na troca: valor em dinheiro vira 0.
   const rawCash = data.cashOffer;
   const cashOffer =
     rawCash === undefined || rawCash === null || rawCash === ""

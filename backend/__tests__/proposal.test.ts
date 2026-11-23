@@ -170,7 +170,6 @@ describe("Suite de Testes: Fluxo de Negociação e Venda", () => {
       status: "available",
     };
 
-    // Vendedor anuncia um Onix; comprador 1 oferece o Uno dele na troca.
     const onix = await Vehicle.create({
       ...baseVehicle,
       brand: "Chevrolet",
@@ -192,7 +191,6 @@ describe("Suite de Testes: Fluxo de Negociação e Venda", () => {
       .send({ targetVehicleId: onix.id, offeredVehicleId: uno.id, cashOffer: 35000 });
     expect(troca.status).toBe(201);
 
-    // Comprador 2 faz proposta pelo Uno (que vai sair do mercado na troca).
     const propostaPeloUno = await request(app)
       .post("/proposals")
       .set("Authorization", `Bearer ${tokenComprador2}`)

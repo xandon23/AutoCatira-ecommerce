@@ -81,6 +81,13 @@ Como comprador ou vendedor, quero ser avisado quando recebo proposta, quando ela
 - [x] Notificação fica PENDENTE se a API estiver fora e é reprocessada (consistência eventual).
 - [x] Endpoint `GET /api/notifications/me`.
 
+**US-11: Ver as notificações no app**
+Como vendedor (Juliana), quero ver no app as notificações das minhas negociações e abrir a proposta com um toque, para responder rápido.
+- [x] Item "Notificações" no menu do perfil, com o número de não lidas.
+- [x] Lista com título, mensagem (com o nome do veículo) e data; não lidas destacadas.
+- [x] Tocar marca como lida e abre a tela relacionada: propostas do veículo, minhas propostas ou avaliações.
+- [x] Se o microsserviço estiver fora, a tela avisa e o restante do app continua funcionando.
+
 **US-09: Proposta com veículo na troca (versão 2, com correção na versão 3)**
 Como comprador (Marcos), quero oferecer meu carro como parte do pagamento para trocar de carro sem ter o valor total.
 - [x] A proposta aceita o valor em dinheiro (≥ 0) e o veículo do comprador.

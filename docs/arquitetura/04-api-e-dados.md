@@ -29,7 +29,7 @@
 | Método | Rota | Descrição |
 |---|---|---|
 | GET | `/api/notifications/health` | Saúde do microsserviço: banco próprio, Redis, API principal e contagem por status |
-| GET | `/api/notifications/me` | Notificações entregues ao usuário logado (JWT) |
+| GET | `/api/notifications/me` | Notificações entregues ao usuário logado (JWT), com `vehicleId`, `proposalId` e `vehicleTitle` para o app abrir a tela relacionada |
 | PATCH | `/api/notifications/:id/read` | Marca como lida |
 
 ### Rota interna (serviço-a-serviço)

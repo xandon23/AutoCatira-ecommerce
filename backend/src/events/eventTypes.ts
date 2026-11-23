@@ -36,6 +36,7 @@ export interface DomainEvents {
 export type EventName = keyof DomainEvents;
 
 export interface EventEnvelope<E extends EventName = EventName> {
+  eventId: string; // identificador único (idempotência no consumidor)
   event: E;
   occurredAt: string;
   requestId?: string;

@@ -3,7 +3,6 @@ import sequelize from "./config/database";
 import { logger } from "./utils/logger";
 import app from "./app";
 import { connectRedis, redisClient } from "./config/redis";
-import { startEventSubscriber } from "./events/eventSubscriber";
 
 const port = 3333;
 const MAX_DB_ATTEMPTS = 10;
@@ -58,7 +57,6 @@ function setupGracefulShutdown(server: Server): void {
 async function start(): Promise<void> {
   // Redis conecta em paralelo e não impede a API de subir.
   connectRedis();
-  startEventSubscriber();
 
   try {
     await connectDatabase();

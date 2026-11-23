@@ -54,6 +54,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - REDIS_URL=redis://redis:6379
       - LOG_LEVEL=info
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-autocatira-token-interno}
     depends_on:
       db:
         condition: service_healthy
@@ -67,6 +68,60 @@ services:
       start_period: 20s
     volumes:
       - ./backend/uploads:/app/uploads
+    networks:
+      - autocatira_network
+
+  # ----------------------------------------
+  # MICROSSERVIÇO DE NOTIFICAÇÕES + BANCO PRÓPRIO
+  # Consome os eventos do Redis (assíncrono), valida usuários na API
+  # principal via HTTP com cache (síncrono) e grava em banco próprio.
+  # ----------------------------------------
+  notification-db:
+    image: mysql:8.0
+    container_name: autocatira_notification_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${NOTIF_DB_ROOT_PASSWORD:-notifroot123}
+      MYSQL_DATABASE: autocatira_notifications
+      MYSQL_USER: notificacoes
+      MYSQL_PASSWORD: ${NOTIF_DB_PASSWORD:-notificacoes123}
+    volumes:
+      - notification_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - autocatira_network
+
+  notification-service:
+    build: ./notification-service
+    container_name: autocatira_notification_service
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3334
+      - DB_HOST=notification-db
+      - DB_NAME=autocatira_notifications
+      - DB_USER=notificacoes
+      - DB_PASSWORD=${NOTIF_DB_PASSWORD:-notificacoes123}
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - MAIN_API_URL=http://backend:3333
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-autocatira-token-interno}
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3334/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - autocatira_network
 
@@ -100,6 +155,8 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+      notification-service:
+        condition: service_healthy
       frontend:
         condition: service_started
     networks:
@@ -110,6 +167,7 @@ services:
 # ----------------------------------------
 volumes:
   db_data:
+  notification_db_data:
 
 networks:
   autocatira_network:

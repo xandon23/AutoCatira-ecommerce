@@ -8,6 +8,7 @@ import AuthRoutes from "./routes/AuthRoutes";
 import AdminRoutes from "./routes/AdminRoutes";
 import HealthRoutes from "./routes/HealthRoutes";
 import DocsRoutes from "./routes/DocsRoutes";
+import InternalRoutes from "./routes/InternalRoutes";
 import { uploadErrorMiddleware } from "./middlewares/uploadErrorMiddleware";
 import { requestLogger } from "./middlewares/requestLogger";
 import {
@@ -24,6 +25,7 @@ app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 app.use("/health", HealthRoutes);
 app.use("/docs", DocsRoutes);
+app.use("/internal", InternalRoutes);
 app.use("/auth", AuthRoutes);
 app.use("/users", UserRoutes);
 app.use("/vehicles", VehicleRoutes);

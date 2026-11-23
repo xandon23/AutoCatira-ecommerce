@@ -52,7 +52,26 @@ jobs:
       - name: Testes automatizados (Vitest + Supertest + MySQL)
         run: npm run test:run
 
-  # ---------- 2. CHECAGEM DO APP MOBILE ----------
+  # ---------- 2. MICROSSERVIÇO DE NOTIFICAÇÕES ----------
+  notification-service:
+    name: Notification service - build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: notification-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: notification-service/package-lock.json
+      - name: Instalar dependências
+        run: npm ci
+      - name: Build (TypeScript)
+        run: npm run build
+
+  # ---------- 3. CHECAGEM DO APP MOBILE ----------
   mobile:
     name: Mobile - checagem de tipos
     runs-on: ubuntu-latest
@@ -71,14 +90,14 @@ jobs:
       - name: TypeScript
         run: npx tsc --noEmit -p .
 
-  # ---------- 3. DEPLOY: IMAGEM DOCKER ----------
+  # ---------- 4. DEPLOY: IMAGENS DOCKER ----------
   # Em todo push: valida que a imagem do backend é construída.
   # Na main: publica no GitHub Container Registry com a tag do commit
   # (permite rollback para qualquer versão anterior) e "latest".
   deploy:
-    name: Deploy - imagem Docker do backend
+    name: Deploy - imagens Docker
     runs-on: ubuntu-latest
-    needs: [backend, mobile]
+    needs: [backend, notification-service, mobile]
     permissions:
       contents: read
       packages: write
@@ -92,13 +111,21 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Nome da imagem em minúsculas
-        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/autocatira-backend" >> $GITHUB_ENV
-      - name: Build (e push na main)
+      - name: Prefixo das imagens em minúsculas
+        run: echo "REGISTRY=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+      - name: Backend - build (e push na main)
         uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: |
-            ${{ env.IMAGE }}:${{ github.sha }}
-            ${{ env.IMAGE }}:latest
+            ${{ env.REGISTRY }}/autocatira-backend:${{ github.sha }}
+            ${{ env.REGISTRY }}/autocatira-backend:latest
+      - name: Notification service - build (e push na main)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./notification-service
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.REGISTRY }}/autocatira-notification-service:${{ github.sha }}
+            ${{ env.REGISTRY }}/autocatira-notification-service:latest

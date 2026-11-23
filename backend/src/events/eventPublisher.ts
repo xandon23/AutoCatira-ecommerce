@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { isRedisReady, redisClient } from "../config/redis";
 import { logger } from "../utils/logger";
 import { getRequestId } from "../utils/requestContext";
@@ -8,13 +9,15 @@ import {
   EventName,
 } from "./eventTypes";
 
-// Publica um evento no Redis Pub/Sub. Falha na publicação nunca derruba
+// Publica um evento no Redis Pub/Sub. Quem consome é o microsserviço de
+// notificações (notification-service), em outro processo/container. Falha na publicação nunca derruba
 // a operação principal (a proposta/venda já foi salva no banco).
 export async function publishEvent<E extends EventName>(
   event: E,
   data: DomainEvents[E],
 ): Promise<void> {
   const envelope: EventEnvelope<E> = {
+    eventId: randomUUID(),
     event,
     occurredAt: new Date().toISOString(),
     requestId: getRequestId(),

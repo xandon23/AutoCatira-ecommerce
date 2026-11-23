@@ -7,6 +7,7 @@ export interface DomainEvents {
   "proposta.criada": {
     proposalId: string;
     vehicleId: string;
+    vehicleTitle: string;
     buyerId: string;
     sellerId: string;
     comTroca: boolean;
@@ -14,12 +15,14 @@ export interface DomainEvents {
   "proposta.status_alterado": {
     proposalId: string;
     vehicleId: string;
+    vehicleTitle: string;
     buyerId: string;
     de: string;
     para: string;
   };
   "veiculo.vendido": {
     vehicleId: string;
+    vehicleTitle: string;
     sellerId: string;
     buyerId: string;
     comTroca: boolean;

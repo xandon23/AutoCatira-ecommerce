@@ -18,6 +18,7 @@ export default class SaleService {
   ): Promise<void> {
     const soldVehicleIds: string[] = [vehicleId];
     let rejectedCount = 0;
+    let vehicleTitle = "";
 
     await sequelize.transaction(async (t) => {
       const vehicle = await negotiationVehicleRepository.findById(vehicleId, t);
@@ -31,6 +32,8 @@ export default class SaleService {
       if (vehicle.status === "sold") {
         throw new AppError("Este veículo já consta como vendido.", 400);
       }
+
+      vehicleTitle = `${vehicle.brand} ${vehicle.model}`;
 
       const winningProposal = await proposalRepository.findNegotiationWithBuyer(
         vehicleId,
@@ -82,6 +85,7 @@ export default class SaleService {
     // Evento publicado só depois da transação confirmada.
     await publishEvent("veiculo.vendido", {
       vehicleId,
+      vehicleTitle,
       sellerId,
       buyerId: dto.buyerId,
       comTroca: soldVehicleIds.length > 1,

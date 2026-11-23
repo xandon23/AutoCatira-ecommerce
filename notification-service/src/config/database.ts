@@ -17,7 +17,8 @@ export async function connectDatabase(maxAttempts = 10): Promise<void> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       await sequelize.authenticate();
-      await sequelize.sync();
+      // alter: adiciona colunas novas na tabela já existente sem apagar dados.
+      await sequelize.sync({ alter: true });
       logger.info("banco.sincronizado", { tentativa: attempt });
       return;
     } catch (error) {

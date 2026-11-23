@@ -69,6 +69,7 @@ export default class ProposalService {
     await publishEvent("proposta.criada", {
       proposalId: proposal.id,
       vehicleId: dto.targetVehicleId,
+      vehicleTitle: `${vehicle.brand} ${vehicle.model}`,
       buyerId,
       sellerId: vehicle.userId,
       comTroca: hasTrade,
@@ -113,6 +114,7 @@ export default class ProposalService {
     await publishEvent("proposta.status_alterado", {
       proposalId: proposal.id,
       vehicleId: proposal.targetVehicleId,
+      vehicleTitle: `${proposal.targetVehicle?.brand ?? ""} ${proposal.targetVehicle?.model ?? ""}`.trim(),
       buyerId: proposal.buyerId,
       de: previousStatus,
       para: dto.status,

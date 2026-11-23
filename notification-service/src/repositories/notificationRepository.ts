@@ -16,6 +16,9 @@ export class NotificationModel extends Model {
   declare attempts: number;
   declare readAt: Date | null;
   declare requestId: string | null;
+  declare vehicleId: string | null;
+  declare proposalId: string | null;
+  declare vehicleTitle: string | null;
   declare createdAt: Date;
 }
 
@@ -33,6 +36,9 @@ NotificationModel.init(
     attempts: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     readAt: { type: DataTypes.DATE, allowNull: true },
     requestId: { type: DataTypes.STRING(64), allowNull: true },
+    vehicleId: { type: DataTypes.STRING(64), allowNull: true },
+    proposalId: { type: DataTypes.STRING(64), allowNull: true },
+    vehicleTitle: { type: DataTypes.STRING(150), allowNull: true },
   },
   {
     sequelize,

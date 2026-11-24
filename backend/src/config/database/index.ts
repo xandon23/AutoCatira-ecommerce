@@ -7,12 +7,12 @@ import Proposal from "../../models/Proposal";
 import Review from "../../models/Review";
 
 const sequelize = new Sequelize(
-  process.env.MYSQL_DATABASE as string,
-  process.env.MYSQL_USER as string,
-  process.env.MYSQL_PASSWORD as string,
+  (process.env.DB_NAME || process.env.MYSQL_DATABASE) as string,
+  (process.env.DB_USER || process.env.MYSQL_USER) as string,
+  (process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD) as string,
   {
-    host: "db",
-    port: 3306,
+    host: process.env.DB_HOST || "db",
+    port: Number(process.env.DB_PORT) || 3306,
     dialect: "mysql",
     logging: false,
     models: [User, Vehicle, VehicleImage, Proposal, Review],

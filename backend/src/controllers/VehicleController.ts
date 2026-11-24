@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { sendError } from "../utils/httpError";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import Vehicle from "../models/Vehicle";
 import User from "../models/User";
@@ -7,6 +8,14 @@ import sequelize from "../config/database";
 import Proposal from "../models/Proposal";
 import { Op } from "sequelize";
 import { IVehicle } from "../types";
+import { AppError } from "../utils/AppError";
+import { logger } from "../utils/logger";
+import {
+  CACHE_TTL,
+  cacheKeys,
+  getOrSet,
+  invalidateVehicle,
+} from "../cache/cacheService";
 
 export default class VehicleController {
   static async create(req: AuthRequest, res: Response): Promise<Response> {
@@ -20,47 +29,64 @@ export default class VehicleController {
         userId: req.userId,
       });
 
+      logger.info("anuncio.criado", { vehicleId: vehicle.id, userId: req.userId });
+
+      await invalidateVehicle();
+
       return res
         .status(201)
         .json({ message: "Anunciado com sucesso!", vehicle });
     } catch (error) {
-      return VehicleController.handleError(res, error, 400);
+      return sendError(res, error, 400);
     }
   }
 
   static async getAll(req: Request, res: Response): Promise<Response> {
     try {
-      const { page = 1, limit = 10, includeSold } = req.query;
-      const offset = (Number(page) - 1) * Number(limit);
-      const where =
-        includeSold === "true" ? {} : { status: { [Op.ne]: "sold" } };
+      const page = Math.max(1, Math.floor(Number(req.query.page)) || 1);
+      const limit = Math.min(
+        50,
+        Math.max(1, Math.floor(Number(req.query.limit)) || 10),
+      );
+      const includeSold = req.query.includeSold === "true";
+      const offset = (page - 1) * limit;
+      const where = includeSold ? {} : { status: { [Op.ne]: "sold" } };
 
-      const { count, rows } = await Vehicle.findAndCountAll({
-        where,
-        limit: Number(limit),
-        offset,
-        order: [["createdAt", "DESC"]],
-        include: [
-          {
-            model: User,
-            as: "user",
-            attributes: ["name", "email"],
-          },
-          {
-            model: VehicleImage,
-            as: "images",
-            attributes: ["id", "url"],
-          },
-        ],
-      });
+      const { data, cache } = await getOrSet(
+        cacheKeys.vehicleList(page, limit, includeSold),
+        CACHE_TTL.vehicleList,
+        async () => {
+          const { count, rows } = await Vehicle.findAndCountAll({
+            where,
+            limit,
+            offset,
+            order: [["createdAt", "DESC"]],
+            include: [
+              {
+                model: User,
+                as: "user",
+                attributes: ["name"],
+              },
+              {
+                model: VehicleImage,
+                as: "images",
+                attributes: ["id", "url"],
+              },
+            ],
+          });
 
-      return res.status(200).json({
-        total: count,
-        totalPages: Math.ceil(count / Number(limit)),
-        vehicles: rows,
-      });
+          return {
+            total: count,
+            totalPages: Math.ceil(count / limit),
+            vehicles: rows.map((row) => row.toJSON()),
+          };
+        },
+      );
+
+      res.setHeader("X-Cache", cache);
+      return res.status(200).json(data);
     } catch (error) {
-      return VehicleController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -88,7 +114,7 @@ export default class VehicleController {
 
       return res.status(200).json(vehicles);
     } catch (error) {
-      return VehicleController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -118,7 +144,7 @@ export default class VehicleController {
 
       return res.status(200).json(vehicles);
     } catch (error) {
-      return VehicleController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -212,21 +238,32 @@ export default class VehicleController {
         saleType,
       });
     } catch (error) {
-      return VehicleController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
   static async getById(req: Request, res: Response): Promise<Response> {
     try {
       const id = req.params.id as string;
-      const vehicle = await Vehicle.findByPk(id, {
-        include: VehicleController.getIncludes(false),
-      });
 
-      if (!vehicle) throw new Error("Veículo não encontrado|404");
-      return res.status(200).json(vehicle);
+      const { data, cache } = await getOrSet(
+        cacheKeys.vehicleDetail(id),
+        CACHE_TTL.vehicleDetail,
+        async () => {
+          const vehicle = await Vehicle.findByPk(id, {
+            include: VehicleController.getIncludes(false),
+          });
+
+          if (!vehicle) throw new AppError("Veículo não encontrado", 404);
+
+          return vehicle.toJSON();
+        },
+      );
+
+      res.setHeader("X-Cache", cache);
+      return res.status(200).json(data);
     } catch (error) {
-      return VehicleController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -246,60 +283,63 @@ export default class VehicleController {
 
       await vehicle.update(VehicleController.whitelist(data));
 
+      logger.info("anuncio.atualizado", { vehicleId: id, userId: req.userId });
+
+      await invalidateVehicle(id);
+
       return res
         .status(200)
         .json({ message: "Anúncio atualizado com sucesso!" });
     } catch (error) {
-      return VehicleController.handleError(res, error, 400);
+      return sendError(res, error, 400);
     }
   }
 
   static async delete(req: AuthRequest, res: Response): Promise<Response> {
+    const t = await sequelize.transaction();
     try {
       const id = req.params.id as string;
       const vehicle = await VehicleController.authorize(id, req.userId);
       if (vehicle.status === "sold") {
-        throw new Error("Veículos vendidos não podem ser excluídos|400");
+        throw new AppError("Veículos vendidos não podem ser excluídos", 400);
       }
-      await vehicle.destroy();
+
+      const relatedToVehicle = {
+        [Op.or]: [{ targetVehicleId: id }, { offeredVehicleId: id }],
+      };
+
+      const activeNegotiation = await Proposal.count({
+        where: { ...relatedToVehicle, status: ["IN_NEGOTIATION", "ACCEPTED"] },
+        transaction: t,
+      });
+
+      if (activeNegotiation > 0) {
+        throw new AppError(
+          "Não é possível excluir um anúncio com negociação em andamento.",
+          400,
+        );
+      }
+
+      const removedProposals = await Proposal.destroy({
+        where: { ...relatedToVehicle, status: ["PENDING", "REJECTED"] },
+        transaction: t,
+      });
+
+      await vehicle.destroy({ transaction: t });
+      await t.commit();
+
+      await invalidateVehicle(id);
+
+      logger.info("anuncio.excluido", {
+        vehicleId: id,
+        userId: req.userId,
+        propostasRemovidas: removedProposals,
+      });
+
       return res.status(204).send();
     } catch (error) {
-      return VehicleController.handleError(res, error, 500);
-    }
-  }
-
-  static async sell(req: AuthRequest, res: Response): Promise<Response> {
-    const t = await sequelize.transaction();
-    try {
-      const id = req.params.id as string;
-      const sellerId = req.userId as string;
-      const buyerId = req.body.buyerId as string;
-
-      if (!buyerId) {
-        throw new Error("Comprador não informado|400");
-      }
-      const vehicle = await VehicleController.authorize(id, sellerId);
-      if (vehicle.status === "sold") {
-        throw new Error("Este veículo já consta como vendido|400");
-      }
-
-      await vehicle.update(
-        {
-          status: "sold",
-          buyerId,
-        },
-        {
-          transaction: t,
-        },
-      );
-
-      await VehicleController.manageProposals(id, buyerId, sellerId, t);
-
-      await t.commit();
-      return res.status(200).json({ message: "Venda finalizada com sucesso!" });
-    } catch (error) {
       await t.rollback();
-      return VehicleController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -353,72 +393,8 @@ export default class VehicleController {
     return v;
   }
 
-  private static async manageProposals(
-    vId: string,
-    bId: string,
-    sellerId: string,
-    t: any,
-  ): Promise<void> {
-    const winningProposal = await Proposal.findOne({
-      where: {
-        targetVehicleId: vId,
-        buyerId: bId,
-        status: "IN_NEGOTIATION",
-      },
-      transaction: t,
-    });
-
-    if (!winningProposal) {
-      throw new Error("Não existe negociação ativa com este comprador|400");
-    }
-
-    await winningProposal.update(
-      {
-        status: "ACCEPTED",
-      },
-      {
-        transaction: t,
-      },
-    );
-
-    if (winningProposal.offeredVehicleId) {
-      await Vehicle.update(
-        {
-          status: "sold",
-          buyerId: sellerId,
-        },
-        {
-          where: {
-            id: winningProposal.offeredVehicleId,
-          },
-          transaction: t,
-        },
-      );
-    }
-
-    await Proposal.update(
-      {
-        status: "REJECTED",
-      },
-      {
-        where: {
-          targetVehicleId: vId,
-
-          id: {
-            [Op.ne]: winningProposal.id,
-          },
-
-          status: ["PENDING", "IN_NEGOTIATION"],
-        },
-        transaction: t,
-      },
-    );
-  }
-
   private static getIncludes(withPhone = false) {
-    const userAttrs = withPhone
-      ? ["name", "email", "phone"]
-      : ["name", "email"];
+    const userAttrs = withPhone ? ["name", "phone"] : ["name"];
     return [
       { model: User, as: "user", attributes: userAttrs },
       { model: User, as: "Buyer", attributes: ["name"] },
@@ -426,13 +402,4 @@ export default class VehicleController {
     ];
   }
 
-  private static handleError(
-    res: Response,
-    error: unknown,
-    defStatus: number,
-  ): Response {
-    const err = error as Error;
-    const [msg, status] = err.message.split("|");
-    return res.status(status ? Number(status) : defStatus).json({ error: msg });
-  }
 }

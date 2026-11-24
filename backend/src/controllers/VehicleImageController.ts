@@ -1,10 +1,12 @@
 import fs from "fs";
+import { sendError } from "../utils/httpError";
 import path from "path";
 import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import VehicleImage from "../models/VehicleImage";
 import Vehicle from "../models/Vehicle";
 import { IVehicleImage } from "../types";
+import { invalidateVehicle } from "../cache/cacheService";
 
 export default class VehicleImageController {
   static async upload(req: Request, res: Response): Promise<Response> {
@@ -16,9 +18,11 @@ export default class VehicleImageController {
       const url = `/uploads/${req.file.filename}`;
       const image = await VehicleImage.create({ vehicleId, url });
 
+      await invalidateVehicle(vehicleId as string);
+
       return res.status(201).json(image as IVehicleImage);
     } catch (error) {
-      return VehicleImageController.handleError(res, error as Error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -44,11 +48,13 @@ export default class VehicleImageController {
 
       await image.destroy();
 
+      await invalidateVehicle(String(image.vehicleId));
+
       return res.status(200).json({
         message: "Imagem deletada com sucesso.",
       });
     } catch (error) {
-      return VehicleImageController.handleError(res, error as Error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -70,13 +76,4 @@ export default class VehicleImageController {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   }
 
-  private static handleError(
-    res: Response,
-    err: Error,
-    defStatus: number,
-  ): Response {
-    const [msg, status] = err.message.split("|");
-    const statusCode = status ? Number(status) : defStatus;
-    return res.status(statusCode).json({ error: msg });
-  }
 }

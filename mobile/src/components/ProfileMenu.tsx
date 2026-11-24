@@ -17,6 +17,8 @@ interface ProfileMenuProps {
   onMyVehicles: () => void;
   onProposals: () => void;
   onReviews: () => void;
+  onNotifications: () => void;
+  unreadNotifications?: number;
   onSignOut: () => void;
   onNegotiations: () => void;
   onMyProposals: () => void;
@@ -32,6 +34,8 @@ export function ProfileMenu({
   onMyVehicles,
   onProposals,
   onReviews,
+  onNotifications,
+  unreadNotifications = 0,
   onSignOut,
   onNegotiations,
   onMyProposals,
@@ -99,6 +103,12 @@ export function ProfileMenu({
 
             <Text style={styles.sectionLabel}>CONTA</Text>
 
+            <MenuItem
+              title="Notificações"
+              onPress={onNotifications}
+              badge={unreadNotifications}
+            />
+
             <MenuItem title="Avaliações" onPress={onReviews} />
 
             {isAdmin && <MenuItem title="Administração" onPress={onAdmin} />}
@@ -129,9 +139,10 @@ interface MenuItemProps {
   title: string;
   onPress: () => void;
   danger?: boolean;
+  badge?: number;
 }
 
-function MenuItem({ title, onPress, danger = false }: MenuItemProps) {
+function MenuItem({ title, onPress, danger = false, badge = 0 }: MenuItemProps) {
   return (
     <Pressable
       style={({ pressed }) => [
@@ -143,6 +154,12 @@ function MenuItem({ title, onPress, danger = false }: MenuItemProps) {
       <Text style={[styles.menuItemText, danger && styles.dangerText]}>
         {title}
       </Text>
+
+      {badge > 0 && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{badge > 99 ? "99+" : badge}</Text>
+        </View>
+      )}
 
       <Text style={styles.arrow}>›</Text>
     </Pressable>
@@ -246,6 +263,23 @@ const styles = StyleSheet.create({
   arrow: {
     fontSize: 24,
     color: "#aaa",
+  },
+
+  badge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 6,
+    backgroundColor: "#1677ff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+
+  badgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "800",
   },
 
   dangerText: {

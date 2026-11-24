@@ -20,6 +20,7 @@ import { MyProposalsScreen } from "../screens/MyProposalsScreen";
 import { SoldVehiclesScreen } from "../screens/SoldVehiclesScreen";
 import { SoldVehicleDetailScreen } from "../screens/SoldVehicleDetailScreen";
 import { ReviewsScreen } from "../screens/ReviewsScreen";
+import { NotificationsScreen } from "../screens/NotificationsScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -172,6 +173,15 @@ export function AppNavigator() {
               options={{
                 headerShown: true,
                 title: "Avaliações",
+              }}
+            />
+
+            <Stack.Screen
+              name="Notifications"
+              component={NotificationsScreen}
+              options={{
+                headerShown: true,
+                title: "Notificações",
               }}
             />
 

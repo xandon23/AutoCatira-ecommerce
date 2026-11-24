@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { Alert } from "react-native";
 import { STORAGE_KEYS } from "../constants/storage";
 
 import * as SecureStore from "expo-secure-store";
@@ -49,6 +50,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     loadStoredSession();
+  }, []);
+
+  useEffect(() => {
+    const interceptorId = api.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const status = error?.response?.status;
+        const url: string = error?.config?.url ?? "";
+        const hadToken = !!error?.config?.headers?.Authorization;
+
+        if (status === 401 && hadToken && !url.includes("/auth/login")) {
+          await signOut();
+          Alert.alert(
+            "Sessão expirada",
+            "Sua sessão expirou. Faça login novamente.",
+          );
+        }
+
+        return Promise.reject(error);
+      },
+    );
+
+    return () => {
+      api.interceptors.response.eject(interceptorId);
+    };
   }, []);
 
   async function signIn(email: string, password: string) {

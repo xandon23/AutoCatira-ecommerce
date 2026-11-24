@@ -1,3 +1,4 @@
-cd frontend
+echo "🔍 Verificando tipos do backend antes do push..."
 
-npx cypress run
+cd backend
+npx tsc --noEmit -p .

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { sendError } from "../utils/httpError";
 
 import { AuthRequest } from "../middlewares/authMiddleware";
 
@@ -9,6 +10,8 @@ import Vehicle from "../models/Vehicle";
 import VehicleImage from "../models/VehicleImage";
 
 import { ICreateReview } from "../types";
+import { logger } from "../utils/logger";
+import { publishEvent } from "../events/eventPublisher";
 
 export default class ReviewController {
   static async create(req: AuthRequest, res: Response): Promise<Response> {
@@ -64,12 +67,25 @@ export default class ReviewController {
         comment: comment?.trim() || null,
       });
 
+      logger.info("avaliacao.criada", {
+        reviewId: review.id,
+        proposalId,
+        rating: review.rating,
+      });
+
+      await publishEvent("avaliacao.criada", {
+        reviewId: review.id,
+        proposalId,
+        reviewedId: String(reviewedId),
+        rating: review.rating,
+      });
+
       return res.status(201).json({
         message: "Avaliação registrada com sucesso!",
         review,
       });
     } catch (error) {
-      return ReviewController.handleError(res, error, 400);
+      return sendError(res, error, 400);
     }
   }
 
@@ -175,7 +191,7 @@ export default class ReviewController {
 
       return res.status(200).json(pending);
     } catch (error) {
-      return ReviewController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -218,7 +234,7 @@ export default class ReviewController {
 
       return res.status(200).json(reviews);
     } catch (error) {
-      return ReviewController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -248,7 +264,7 @@ export default class ReviewController {
 
       return res.status(200).json(reviews);
     } catch (error) {
-      return ReviewController.handleError(res, error, 500);
+      return sendError(res, error, 500);
     }
   }
 
@@ -321,17 +337,4 @@ export default class ReviewController {
     }
   }
 
-  private static handleError(
-    res: Response,
-    error: unknown,
-    defaultStatus: number,
-  ): Response {
-    const err = error as Error;
-
-    const [message, status] = err.message.split("|");
-
-    return res.status(status ? Number(status) : defaultStatus).json({
-      error: message,
-    });
-  }
 }

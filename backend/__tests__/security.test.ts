@@ -14,9 +14,6 @@ describe("Suite de Testes: Segurança e Autenticação", () => {
   const JWT_SECRET = process.env.JWT_SECRET || "SuaChaveSecretaSuperDificil123";
 
   beforeAll(async () => {
-    await Vehicle.destroy({ where: {} });
-    await User.destroy({ where: {} });
-
     const userA = await User.create({
       name: "Usuario A",
       email: "a@test.com",

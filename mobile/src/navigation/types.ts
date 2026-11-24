@@ -10,6 +10,7 @@ export type RootStackParamList = {
   MyProposals: undefined;
   SoldVehicles: undefined;
   Reviews: undefined;
+  Notifications: undefined;
 
   SoldVehicleDetail: {
     vehicleId: string;

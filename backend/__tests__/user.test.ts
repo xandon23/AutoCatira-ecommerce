@@ -47,6 +47,7 @@ describe("Suite de Testes: Cadastro de Usuário (AutoZoom)", () => {
     });
 
     expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty("id");
+    expect(response.body.user).toHaveProperty("id");
+    expect(response.body.user).not.toHaveProperty("password");
   });
 });
